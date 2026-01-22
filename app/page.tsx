@@ -356,15 +356,16 @@ export default function Home() {
               {/* header */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-2xl bg-white/70 border border-gray-200 shadow-sm grid place-items-center">
-                    <Image
-                      src="/logo.png"
-                      alt="Al Qadr"
-                      width={34}
-                      height={34}
-                      className="rounded"
-                    />
-                  </div>
+                 <div className="h-[80px] w-[85px] rounded-xl bg-white/100 backdrop-blur border border-gray-200 shadow-sm grid place-items-center">
+            <Image
+              src="/logo.png"
+              alt="Al Qadr"
+              width={58}
+              height={58}
+              className="rounded"
+              priority
+            />
+          </div>
                   <div>
                     <div className="text-sm font-semibold leading-tight">
                       Al Qadr
@@ -447,7 +448,7 @@ export default function Home() {
                     <MenuRow
                       href="/my-progress"
                       label="My Progress"
-                      sub="Add Sabak & mistakes"
+                      sub="Add Progress"
                       onClick={closeMenu}
                       variant="primary"
                     />
