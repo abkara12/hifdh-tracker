@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "./lib/firebase";
 
-/* ✅ ADDED: burger icons */
+/* ✅ Icons */
 function MenuIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" aria-hidden="true">
@@ -50,6 +50,27 @@ function ChevronIcon({ open }: { open: boolean }) {
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/* ✅ Fancy icon for menu rows */
+function DotArrowIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+      <path
+        d="M9 6l6 6-6 6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M4.5 12h9"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
     </svg>
   );
@@ -114,14 +135,74 @@ function FeatureCard({
           <p className="text-gray-700 leading-relaxed">{text}</p>
         </div>
       </div>
-
-      {/* ✅ REMOVED: "Learn more" */}
     </div>
   );
 }
 
+/* ✅ Fancy reusable menu row (with glow + arrow) */
+function MenuRow({
+  href,
+  label,
+  sub,
+  onClick,
+  variant = "default",
+}: {
+  href: string;
+  label: string;
+  sub?: string;
+  onClick: () => void;
+  variant?: "default" | "primary";
+}) {
+  const base =
+    "group relative overflow-hidden rounded-2xl border px-4 py-4 text-sm font-semibold transition-all duration-300";
+  const primary =
+    "border-black bg-black text-white hover:bg-gray-900 shadow-sm";
+  const normal =
+    "border-gray-200 bg-white/70 text-gray-900 hover:bg-white shadow-sm";
+
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={`${base} ${variant === "primary" ? primary : normal}`}
+    >
+      {/* glow */}
+      <div
+        className={`pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
+          variant === "primary" ? "bg-white/15" : "bg-[#9c7c38]/14"
+        }`}
+      />
+
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <div className="text-base leading-tight">{label}</div>
+          {sub ? (
+            <div
+              className={`mt-1 text-xs font-medium ${
+                variant === "primary" ? "text-white/70" : "text-gray-600"
+              }`}
+            >
+              {sub}
+            </div>
+          ) : null}
+        </div>
+
+        <div
+          className={`grid place-items-center h-10 w-10 rounded-full transition-all duration-300 ${
+            variant === "primary"
+              ? "bg-white/10 text-white"
+              : "bg-[#9c7c38]/10 text-[#9c7c38]"
+          } group-hover:scale-[1.04]`}
+        >
+          <DotArrowIcon />
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 export default function Home() {
-  /* ✅ ADDED: mobile menu state */
+  /* ✅ mobile menu state */
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuState, setMenuState] = useState<"open" | "closed">("closed");
 
@@ -145,6 +226,11 @@ export default function Home() {
     ],
     []
   );
+
+  function closeMenu() {
+    setMenuState("closed");
+    setTimeout(() => setMobileOpen(false), 650);
+  }
 
   return (
     <main id="top" className="min-h-screen bg-transparent text-gray-900">
@@ -184,7 +270,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ✅ Desktop actions (laptop and bigger) */}
+        {/* ✅ Desktop actions */}
         <div className="hidden lg:flex items-center gap-3">
           <Link
             href="/contact"
@@ -226,127 +312,193 @@ export default function Home() {
           )}
         </div>
 
-        {/* ✅ Burger menu (smaller than laptop) */}
+        {/* ✅ Burger (mobile) */}
         <button
           type="button"
           onClick={() => {
             setMobileOpen(true);
             requestAnimationFrame(() => setMenuState("open"));
           }}
-          className="lg:hidden inline-flex items-center justify-center h-11 w-11 rounded-full border border-gray-200 bg-white/70 backdrop-blur shadow-sm hover:bg-white transition-colors"
+          className="lg:hidden relative inline-flex items-center justify-center h-11 w-11 rounded-full border border-gray-200 bg-white/70 backdrop-blur shadow-sm hover:bg-white transition-colors"
           aria-label="Open menu"
         >
+          {/* subtle ring */}
+          <span className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-black/5" />
           <MenuIcon />
         </button>
       </header>
 
-      {/* ✅ Mobile menu overlay */}
+      {/* ✅ Fancy Mobile Menu */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50">
-          {/* Backdrop */}
+          {/* Backdrop: blur + dim */}
           <div
-            onClick={() => {
-              setMenuState("closed");
-              setTimeout(() => setMobileOpen(false), 600);
-            }}
-            className={`absolute inset-0 bg-black/40 transition-opacity duration-[600ms] ease-out ${
+            onClick={closeMenu}
+            className={`absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity duration-[650ms] ease-out ${
               menuState === "open" ? "opacity-100" : "opacity-0"
             }`}
           />
 
-          {/* Slide panel */}
+          {/* Slide panel + top glow */}
           <div
-            className={`absolute right-0 top-0 h-full w-[85%] max-w-sm bg-white/80 backdrop-blur border-l border-gray-200 shadow-2xl p-6 transition-transform duration-[600ms] ease-[cubic-bezier(.16,1,.3,1)] ${
+            className={`absolute right-0 top-0 h-full w-[92%] max-w-sm border-l border-white/40 bg-white/70 backdrop-blur-2xl shadow-2xl transition-transform duration-[650ms] ease-[cubic-bezier(.16,1,.3,1)] ${
               menuState === "open" ? "translate-x-0" : "translate-x-full"
             }`}
           >
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold">Menu</div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuState("closed");
-                  setTimeout(() => setMobileOpen(false), 600);
-                }}
-                className="inline-flex items-center justify-center h-11 w-11 rounded-full border border-gray-200 bg-white/70 hover:bg-white transition-colors"
-                aria-label="Close menu"
-              >
-                <CloseIcon />
-              </button>
+            {/* panel background decorations */}
+            <div className="pointer-events-none absolute inset-0">
+              <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-[#9c7c38]/20 blur-3xl" />
+              <div className="absolute -bottom-32 -left-32 h-80 w-80 rounded-full bg-black/10 blur-3xl" />
+              <div className="absolute inset-0 bg-[radial-gradient(600px_circle_at_70%_10%,rgba(156,124,56,0.16),transparent_55%)]" />
             </div>
 
-            <div className="mt-8 grid gap-3">
-              {[
-                { label: "Home", href: "/" },
-                { label: "About", href: "#about" },
-                { label: "FAQ", href: "#faq" },
-                { label: "Contact", href: "/contact" },
-              ].map((l) => (
-                <a
-                  key={l.label}
-                  href={l.href}
-                  onClick={() => {
-                    setMenuState("closed");
-                    setTimeout(() => setMobileOpen(false), 600);
-                  }}
-                  className="rounded-2xl border border-gray-200 bg-white/70 px-4 py-4 text-sm font-medium text-gray-900 hover:bg-white transition-colors"
+            <div className="relative p-6 h-full flex flex-col">
+              {/* header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-2xl bg-white/70 border border-gray-200 shadow-sm grid place-items-center">
+                    <Image
+                      src="/logo.png"
+                      alt="Al Qadr"
+                      width={34}
+                      height={34}
+                      className="rounded"
+                    />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold leading-tight">
+                      Al Qadr
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      Hifz Class • Menu
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={closeMenu}
+                  className="relative inline-flex items-center justify-center h-11 w-11 rounded-full border border-gray-200 bg-white/70 hover:bg-white transition-colors shadow-sm"
+                  aria-label="Close menu"
                 >
-                  {l.label}
-                </a>
-              ))}
+                  <span className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-black/5" />
+                  <CloseIcon />
+                </button>
+              </div>
 
-              <div className="mt-2 h-px bg-gray-200" />
+              {/* quick status chip */}
+              <div className="mt-6 flex items-center justify-between gap-3 rounded-3xl border border-gray-200 bg-white/60 px-4 py-3 shadow-sm">
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-[#9c7c38]">
+                    Status
+                  </div>
+                  <div className="text-sm font-semibold text-gray-900">
+                    {user ? "Signed in" : "Guest"}
+                  </div>
+                </div>
 
-              {user ? (
-                <>
-                  <a
-                    href="/my-progress"
-                    onClick={() => {
-                      setMenuState("closed");
-                      setTimeout(() => setMobileOpen(false), 600);
-                    }}
-                    className="rounded-2xl border border-gray-200 bg-white/70 px-4 py-4 text-sm font-medium text-gray-900 hover:bg-white transition-colors"
-                  >
-                    My Progress
-                  </a>
+                <div
+                  className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold border ${
+                    user
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-gray-200 bg-white/60 text-gray-700"
+                  }`}
+                >
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      user ? "bg-emerald-500" : "bg-[#9c7c38]"
+                    }`}
+                  />
+                  {user ? "Active" : "Not logged in"}
+                </div>
+              </div>
 
-                  <a
-                    href="/overview"
-                    onClick={() => {
-                      setMenuState("closed");
-                      setTimeout(() => setMobileOpen(false), 600);
-                    }}
-                    className="rounded-2xl border border-gray-200 bg-white/70 px-4 py-4 text-sm font-medium text-gray-900 hover:bg-white transition-colors"
-                  >
-                    Overview
-                  </a>
-                </>
-              ) : (
-                <>
-                  <a
-                    href="/login"
-                    onClick={() => {
-                      setMenuState("closed");
-                      setTimeout(() => setMobileOpen(false), 600);
-                    }}
-                    className="rounded-2xl border border-gray-200 bg-white/70 px-4 py-4 text-sm font-medium text-gray-900 hover:bg-white transition-colors"
-                  >
-                    Sign In
-                  </a>
+              {/* menu items */}
+              <div className="mt-6 grid gap-3">
+                <MenuRow
+                  href="/"
+                  label="Home"
+                  sub="Back to the main page"
+                  onClick={closeMenu}
+                />
+                <MenuRow
+                  href="#about"
+                  label="About"
+                  sub="About the madrassah"
+                  onClick={closeMenu}
+                />
+                <MenuRow
+                  href="#faq"
+                  label="FAQ"
+                  sub="Common questions"
+                  onClick={closeMenu}
+                />
+                <MenuRow
+                  href="/contact"
+                  label="Contact"
+                  sub="Ustadh details"
+                  onClick={closeMenu}
+                />
 
-                  <a
-                    href="/signup"
-                    onClick={() => {
-                      setMenuState("closed");
-                      setTimeout(() => setMobileOpen(false), 600);
-                    }}
-                    className="rounded-2xl bg-black px-4 py-4 text-sm font-semibold text-white hover:bg-gray-900 transition-colors"
+                <div className="my-1 h-px bg-gray-200/80" />
+
+                {user ? (
+                  <>
+                    <MenuRow
+                      href="/my-progress"
+                      label="My Progress"
+                      sub="Add Sabak & mistakes"
+                      onClick={closeMenu}
+                      variant="primary"
+                    />
+                    <MenuRow
+                      href="/overview"
+                      label="Overview"
+                      sub="See your history"
+                      onClick={closeMenu}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <MenuRow
+                      href="/login"
+                      label="Sign In"
+                      sub="Continue your journey"
+                      onClick={closeMenu}
+                    />
+                    <MenuRow
+                      href="/signup"
+                      label="Sign Up"
+                      sub="Create student account"
+                      onClick={closeMenu}
+                      variant="primary"
+                    />
+                  </>
+                )}
+              </div>
+
+              {/* bottom area */}
+              <div className="mt-auto pt-6">
+                <div className="rounded-3xl border border-gray-200 bg-white/60 px-5 py-4 shadow-sm">
+                  <div className="text-xs uppercase tracking-widest text-[#9c7c38]">
+                    Quick tip
+                  </div>
+                  <div className="mt-1 text-sm text-gray-700">
+                    Add this site to your home screen for an app-like experience.
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
+                  <span>© {new Date().getFullYear()} Al Qadr</span>
+                  <button
+                    type="button"
+                    onClick={closeMenu}
+                    className="rounded-full border border-gray-200 bg-white/60 px-3 py-1.5 hover:bg-white transition-colors"
                   >
-                    Sign Up
-                  </a>
-                </>
-              )}
+                    Close
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -600,7 +752,11 @@ export default function Home() {
               text="Each student logs in privately and tracks their own Sabak, Dhor, and weekly goal progress."
               icon={
                 <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none">
-                  <path d="M12 12a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" strokeWidth="2" />
+                  <path
+                    d="M12 12a4 4 0 100-8 4 4 0 000 8z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  />
                   <path
                     d="M4 20a8 8 0 0116 0"
                     stroke="currentColor"
@@ -618,8 +774,12 @@ export default function Home() {
       <section id="faq" className="py-24">
         <div className="max-w-4xl mx-auto px-6 sm:px-10">
           <div className="text-center mb-12">
-            <p className="uppercase tracking-widest text-sm text-[#9c7c38]">Questions & Answers</p>
-            <h2 className="mt-2 text-4xl font-semibold tracking-tight">Frequently Asked Questions</h2>
+            <p className="uppercase tracking-widest text-sm text-[#9c7c38]">
+              Questions & Answers
+            </p>
+            <h2 className="mt-2 text-4xl font-semibold tracking-tight">
+              Frequently Asked Questions
+            </h2>
           </div>
 
           <div className="grid gap-4">
@@ -652,7 +812,9 @@ export default function Home() {
 
             <div className="grid md:grid-cols-12 gap-10 items-center relative">
               <div className="md:col-span-8">
-                <p className="uppercase tracking-widest text-sm text-[#9c7c38]">Ready to begin?</p>
+                <p className="uppercase tracking-widest text-sm text-[#9c7c38]">
+                  Ready to begin?
+                </p>
                 <h2 className="mt-2 text-4xl font-semibold tracking-tight">
                   Enrol and start tracking your Hifz journey today
                 </h2>
@@ -681,7 +843,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FOOTER (fancy + responsive) */}
+      {/* FOOTER */}
       <footer className="border-t border-gray-200 bg-white/60 backdrop-blur">
         <div className="max-w-7xl mx-auto px-6 sm:px-10 py-14">
           <div className="grid gap-10 lg:grid-cols-12 items-start">
@@ -696,8 +858,6 @@ export default function Home() {
                   <div className="text-sm text-gray-600">Hifz Class • Northcliff</div>
                 </div>
               </div>
-
-              {/* ✅ REMOVED footer paragraph */}
 
               <div className="mt-6 flex flex-wrap gap-3">
                 <a
@@ -772,9 +932,6 @@ export default function Home() {
                     <a href="#about" className="block text-sm text-gray-700 hover:text-black">
                       Structure
                     </a>
-
-                    {/* ✅ REMOVED: Requirements link */}
-
                     <a href="/signup" className="block text-sm text-gray-700 hover:text-black">
                       Enrolment
                     </a>
