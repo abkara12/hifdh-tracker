@@ -4,7 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../lib/firebase";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { auth, db } from "../lib/firebase";
 import { useRouter } from "next/navigation";
 
 function friendlySignupError(code?: string) {
@@ -35,8 +36,21 @@ export default function SignupPage() {
     e.preventDefault();
     setErr(null);
     setLoading(true);
+
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+
+      // ✅ Create a profile doc so Admin can search students by email + set roles
+      await setDoc(
+        doc(db, "users", cred.user.uid),
+        {
+          email: (cred.user.email ?? email).toLowerCase(),
+          role: "student",
+          createdAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+
       router.push("/my-progress");
     } catch (error: any) {
       setErr(friendlySignupError(error?.code));
