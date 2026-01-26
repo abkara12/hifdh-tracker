@@ -7,6 +7,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db } from "../../../lib/firebase";
 
+/** -------------------- Date helpers -------------------- */
 function getDateKeySA() {
   const now = new Date();
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -22,11 +23,52 @@ function getDateKeySA() {
   return `${y}-${m}-${d}`;
 }
 
+function parseDateKey(dateKey: string) {
+  // dateKey is YYYY-MM-DD
+  const [y, m, d] = dateKey.split("-").map((x) => Number(x));
+  return new Date(y, (m ?? 1) - 1, d ?? 1);
+}
+
+function diffDaysInclusive(startKey: string, endKey: string) {
+  const a = parseDateKey(startKey);
+  const b = parseDateKey(endKey);
+  const ms = b.getTime() - a.getTime();
+  const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+  return Math.max(0, days) + 1; // inclusive
+}
+
+// ISO week key like "2026-W05"
+function isoWeekKeyFromDateKey(dateKey: string) {
+  const d = parseDateKey(dateKey);
+  const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  // ISO week algorithm
+  const day = (date.getDay() + 6) % 7; // Mon=0..Sun=6
+  date.setDate(date.getDate() - day + 3); // Thu of current week
+  const firstThursday = new Date(date.getFullYear(), 0, 4);
+  const firstDay = (firstThursday.getDay() + 6) % 7;
+  firstThursday.setDate(firstThursday.getDate() - firstDay + 3);
+
+  const weekNo =
+    1 +
+    Math.round(
+      (date.getTime() - firstThursday.getTime()) / (7 * 24 * 60 * 60 * 1000)
+    );
+
+  const year = date.getFullYear();
+  const ww = String(weekNo).padStart(2, "0");
+  return `${year}-W${ww}`;
+}
+
 function toText(v: unknown) {
   if (v === null || v === undefined) return "";
   return typeof v === "string" ? v : String(v);
 }
 
+function toBool(v: unknown) {
+  return v === true || v === "true" || v === 1 || v === "1";
+}
+
+/** -------------------- UI shell -------------------- */
 function Shell({
   title,
   subtitle,
@@ -98,6 +140,7 @@ function LoadingCard() {
   );
 }
 
+/** -------------------- Page -------------------- */
 export default function AdminStudentPage() {
   const params = useParams<{ uid: string }>();
   const studentUid = params.uid;
@@ -108,17 +151,34 @@ export default function AdminStudentPage() {
 
   const [studentEmail, setStudentEmail] = useState("");
 
+  // daily fields
   const [sabak, setSabak] = useState("");
   const [sabakDhor, setSabakDhor] = useState("");
   const [dhor, setDhor] = useState("");
-  const [weeklyGoal, setWeeklyGoal] = useState("");
   const [sabakDhorMistakes, setSabakDhorMistakes] = useState("");
   const [dhorMistakes, setDhorMistakes] = useState("");
 
+  // weekly goal fields (meta)
+  const [weeklyGoal, setWeeklyGoal] = useState("");
+  const [weeklyGoalWeekKey, setWeeklyGoalWeekKey] = useState("");
+  const [weeklyGoalStartDateKey, setWeeklyGoalStartDateKey] = useState("");
+  const [weeklyGoalCompletedDateKey, setWeeklyGoalCompletedDateKey] = useState("");
+  const [weeklyGoalDurationDays, setWeeklyGoalDurationDays] = useState<number | null>(null);
+
+  // UI
+  const [markGoalCompleted, setMarkGoalCompleted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
   const dateKey = useMemo(() => getDateKeySA(), []);
+  const currentWeekKey = useMemo(() => isoWeekKeyFromDateKey(dateKey), [dateKey]);
+
+  // weekly goal can be set only once per week
+  const goalLockedThisWeek =
+    weeklyGoal.trim().length > 0 && weeklyGoalWeekKey === currentWeekKey;
+
+  const goalAlreadyCompleted =
+    Boolean(weeklyGoalCompletedDateKey) || (weeklyGoalDurationDays ?? 0) > 0;
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -144,11 +204,24 @@ export default function AdminStudentPage() {
 
   useEffect(() => {
     async function loadStudent() {
+      // profile snapshot + weekly goal meta
       const sDoc = await getDoc(doc(db, "users", studentUid));
       if (sDoc.exists()) {
         const data = sDoc.data() as any;
+
         setStudentEmail(toText(data.email));
+
         setWeeklyGoal(toText(data.weeklyGoal));
+        setWeeklyGoalWeekKey(toText(data.weeklyGoalWeekKey));
+        setWeeklyGoalStartDateKey(toText(data.weeklyGoalStartDateKey));
+        setWeeklyGoalCompletedDateKey(toText(data.weeklyGoalCompletedDateKey));
+
+        const dur = data.weeklyGoalDurationDays;
+        setWeeklyGoalDurationDays(
+          typeof dur === "number" ? dur : dur ? Number(dur) : null
+        );
+
+        // seed daily fields with "current" snapshot
         setSabak(toText(data.currentSabak));
         setSabakDhor(toText(data.currentSabakDhor));
         setDhor(toText(data.currentDhor));
@@ -156,19 +229,23 @@ export default function AdminStudentPage() {
         setDhorMistakes(toText(data.currentDhorMistakes));
       }
 
+      // today's log overrides if exists
       const todayDoc = await getDoc(doc(db, "users", studentUid, "logs", dateKey));
       if (todayDoc.exists()) {
         const d = todayDoc.data() as any;
         setSabak(toText(d.sabak));
         setSabakDhor(toText(d.sabakDhor));
         setDhor(toText(d.dhor));
-        setWeeklyGoal(toText(d.weeklyGoal));
         setSabakDhorMistakes(toText(d.sabakDhorMistakes));
         setDhorMistakes(toText(d.dhorMistakes));
+
+        // allow reading weekly goal from log snapshot too (optional)
+        if (!weeklyGoal) setWeeklyGoal(toText(d.weeklyGoal));
       }
     }
 
     if (studentUid) loadStudent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studentUid, dateKey]);
 
   async function handleSave(e: React.FormEvent) {
@@ -179,6 +256,45 @@ export default function AdminStudentPage() {
     setMsg(null);
 
     try {
+      // ---- Weekly goal meta updates ----
+      let nextGoal = weeklyGoal.trim();
+      let nextWeekKey = weeklyGoalWeekKey;
+      let nextStartKey = weeklyGoalStartDateKey;
+      let nextCompletedKey = weeklyGoalCompletedDateKey;
+      let nextDuration = weeklyGoalDurationDays;
+
+      // If goal is empty, don't create meta
+      if (!nextGoal) {
+        // leave as-is (some people might want blank)
+      } else {
+        // If goal was never set, or set in a different week, allow setting (resets completion)
+        const isNewWeekGoal = !nextWeekKey || nextWeekKey !== currentWeekKey;
+        if (isNewWeekGoal) {
+          nextWeekKey = currentWeekKey;
+          nextStartKey = dateKey;
+          nextCompletedKey = "";
+          nextDuration = null;
+          setMarkGoalCompleted(false);
+        } else {
+          // Same week: lock changes
+          // (We still allow it to be saved as-is without changing the text.)
+          // If someone changed the text, revert to existing to enforce rule.
+          // If you prefer: show an error instead.
+          if (goalLockedThisWeek) {
+            // keep as typed if same value; otherwise enforce lock
+            // easiest enforcement: do nothing (it will save same value anyway)
+          }
+        }
+
+        // Completion (only if not already completed)
+        if (markGoalCompleted && !nextCompletedKey) {
+          const startKey = nextStartKey || dateKey;
+          nextCompletedKey = dateKey;
+          nextDuration = diffDaysInclusive(startKey, dateKey);
+        }
+      }
+
+      // ---- 1) Daily log doc ----
       await setDoc(
         doc(db, "users", studentUid, "logs", dateKey),
         {
@@ -187,19 +303,35 @@ export default function AdminStudentPage() {
           sabak,
           sabakDhor,
           dhor,
-          weeklyGoal,
           sabakDhorMistakes,
           dhorMistakes,
+
+          // include weekly goal snapshot for the day
+          weeklyGoal: nextGoal,
+          weeklyGoalWeekKey: nextWeekKey || null,
+          weeklyGoalStartDateKey: nextStartKey || null,
+          weeklyGoalCompletedDateKey: nextCompletedKey || null,
+          weeklyGoalDurationDays: nextDuration ?? null,
+          weeklyGoalCompleted: Boolean(nextCompletedKey),
+
           updatedBy: me?.uid ?? null,
           updatedByEmail: me?.email ?? null,
         },
         { merge: true }
       );
 
+      // ---- 2) User snapshot doc ----
       await setDoc(
         doc(db, "users", studentUid),
         {
-          weeklyGoal,
+          // weekly goal meta on user
+          weeklyGoal: nextGoal,
+          weeklyGoalWeekKey: nextWeekKey || null,
+          weeklyGoalStartDateKey: nextStartKey || null,
+          weeklyGoalCompletedDateKey: nextCompletedKey || null,
+          weeklyGoalDurationDays: nextDuration ?? null,
+
+          // current snapshot
           currentSabak: sabak,
           currentSabakDhor: sabakDhor,
           currentDhor: dhor,
@@ -210,6 +342,13 @@ export default function AdminStudentPage() {
         },
         { merge: true }
       );
+
+      // update local state so UI reflects instantly
+      setWeeklyGoal(nextGoal);
+      setWeeklyGoalWeekKey(nextWeekKey || "");
+      setWeeklyGoalStartDateKey(nextStartKey || "");
+      setWeeklyGoalCompletedDateKey(nextCompletedKey || "");
+      setWeeklyGoalDurationDays(nextDuration ?? null);
 
       setMsg("Saved ✅");
       setTimeout(() => setMsg(null), 2500);
@@ -266,7 +405,7 @@ export default function AdminStudentPage() {
   return (
     <Shell
       title={`Log work for ${studentEmail || "student"}`}
-      subtitle={`Submitting for ${dateKey}`}
+      subtitle={`Submitting for ${dateKey} • ${currentWeekKey}`}
       rightSlot={
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Link
@@ -285,14 +424,29 @@ export default function AdminStudentPage() {
       }
     >
       <div className="rounded-3xl border border-gray-200 bg-white/70 backdrop-blur p-5 sm:p-8 shadow-sm">
+        {/* status row */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white/70 px-4 py-2 text-xs font-semibold text-gray-700 w-fit">
             <span className="h-2 w-2 rounded-full bg-[#9c7c38]" />
             Update today’s work
           </div>
 
-          <div className="text-sm text-gray-600">
-            Saved entries update Overview automatically.
+          <div className="flex flex-wrap items-center gap-2">
+            {weeklyGoal ? (
+              <span className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white/70 px-3 py-1.5 text-xs font-semibold text-gray-700">
+                Goal: {weeklyGoalWeekKey || currentWeekKey}
+              </span>
+            ) : null}
+
+            {goalAlreadyCompleted ? (
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+                Completed in {weeklyGoalDurationDays ?? "—"} day(s)
+              </span>
+            ) : weeklyGoal ? (
+              <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
+                In progress
+              </span>
+            ) : null}
           </div>
         </div>
 
@@ -306,7 +460,65 @@ export default function AdminStudentPage() {
           </div>
 
           <Field label="Dhor" value={dhor} setValue={setDhor} hint="Older revision" />
-          <Field label="Weekly Sabak Goal" value={weeklyGoal} setValue={setWeeklyGoal} hint="Example: 10 pages" />
+
+          {/* Weekly goal block */}
+          <div className="rounded-3xl border border-gray-200 bg-white/70 p-5 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold text-gray-900">Weekly Goal</div>
+                <div className="mt-1 text-sm text-gray-700">
+                  Set once per week. When the student finishes it, tick “Completed” and it will calculate how long it took.
+                </div>
+              </div>
+
+              <div className="text-xs text-gray-600">
+                Week: <span className="font-semibold">{currentWeekKey}</span>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-4">
+              <label className="grid gap-2">
+                <div className="flex items-end justify-between gap-4">
+                  <span className="text-sm font-semibold text-gray-900">Weekly Sabak Goal</span>
+                  <span className="text-xs text-gray-500">
+                    {goalLockedThisWeek ? "Locked (already set this week)" : "Set it now"}
+                  </span>
+                </div>
+
+                <input
+                  value={weeklyGoal}
+                  onChange={(e) => setWeeklyGoal(e.target.value)}
+                  disabled={goalLockedThisWeek}
+                  className="h-12 rounded-2xl border border-gray-200 bg-white/80 px-4 outline-none focus:ring-2 focus:ring-[#9c7c38]/30 disabled:opacity-60"
+                  placeholder="Example: 10 pages"
+                />
+              </label>
+
+              <div className="grid gap-2 sm:grid-cols-3">
+                <MiniInfo label="Started" value={weeklyGoalStartDateKey || "—"} />
+                <MiniInfo label="Completed" value={weeklyGoalCompletedDateKey || "—"} />
+                <MiniInfo label="Duration" value={weeklyGoalDurationDays ? `${weeklyGoalDurationDays} day(s)` : "—"} />
+              </div>
+
+              {/* Complete toggle */}
+              <label className="flex items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-white/70 px-4 py-4">
+                <div>
+                  <div className="text-sm font-semibold text-gray-900">Weekly Goal Completed</div>
+                  <div className="mt-1 text-xs text-gray-600">
+                    Tick this only when the student has finished their weekly goal.
+                  </div>
+                </div>
+
+                <input
+                  type="checkbox"
+                  checked={goalAlreadyCompleted ? true : markGoalCompleted}
+                  disabled={goalAlreadyCompleted || !weeklyGoal.trim()}
+                  onChange={(e) => setMarkGoalCompleted(e.target.checked)}
+                  className="h-6 w-6 accent-black disabled:opacity-50"
+                />
+              </label>
+            </div>
+          </div>
 
           <div className="pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <button
@@ -354,5 +566,14 @@ function Field({
         placeholder="Type here…"
       />
     </label>
+  );
+}
+
+function MiniInfo({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white/70 px-4 py-3">
+      <div className="text-xs text-gray-500">{label}</div>
+      <div className="mt-1 text-sm font-semibold text-gray-900 break-words">{value}</div>
+    </div>
   );
 }

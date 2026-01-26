@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import {
@@ -9,7 +9,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  limit,
   orderBy,
   query,
 } from "firebase/firestore";
@@ -21,6 +20,7 @@ function toText(v: unknown) {
 }
 
 type LogRow = {
+  id: string;
   dateKey: string;
   sabak: string;
   sabakDhor: string;
@@ -28,6 +28,12 @@ type LogRow = {
   weeklyGoal: string;
   sabakDhorMistakes: string;
   dhorMistakes: string;
+
+  weeklyGoalWeekKey?: string;
+  weeklyGoalStartDateKey?: string;
+  weeklyGoalCompletedDateKey?: string;
+  weeklyGoalDurationDays?: string;
+  weeklyGoalCompleted?: boolean;
 };
 
 function Shell({
@@ -115,8 +121,14 @@ export default function AdminStudentOverviewPage() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   const [studentEmail, setStudentEmail] = useState("");
+
   const [snapshot, setSnapshot] = useState({
     weeklyGoal: "",
+    weeklyGoalWeekKey: "",
+    weeklyGoalStartDateKey: "",
+    weeklyGoalCompletedDateKey: "",
+    weeklyGoalDurationDays: "",
+
     currentSabak: "",
     currentSabakDhor: "",
     currentDhor: "",
@@ -154,9 +166,19 @@ export default function AdminStudentOverviewPage() {
       const sDoc = await getDoc(doc(db, "users", studentUid));
       if (sDoc.exists()) {
         const data = sDoc.data() as any;
+
         setStudentEmail(toText(data.email));
+
         setSnapshot({
           weeklyGoal: toText(data.weeklyGoal),
+          weeklyGoalWeekKey: toText(data.weeklyGoalWeekKey),
+          weeklyGoalStartDateKey: toText(data.weeklyGoalStartDateKey),
+          weeklyGoalCompletedDateKey: toText(data.weeklyGoalCompletedDateKey),
+          weeklyGoalDurationDays:
+            data.weeklyGoalDurationDays !== undefined && data.weeklyGoalDurationDays !== null
+              ? String(data.weeklyGoalDurationDays)
+              : "",
+
           currentSabak: toText(data.currentSabak),
           currentSabakDhor: toText(data.currentSabakDhor),
           currentDhor: toText(data.currentDhor),
@@ -166,19 +188,19 @@ export default function AdminStudentOverviewPage() {
       }
     }
 
-    async function loadLogs() {
+    async function loadAllLogs() {
       setLoadingLogs(true);
       try {
         const qy = query(
           collection(db, "users", studentUid, "logs"),
-          orderBy("dateKey", "desc"),
-          limit(30)
+          orderBy("dateKey", "desc")
         );
         const snap = await getDocs(qy);
 
         const rows: LogRow[] = snap.docs.map((d) => {
           const x = d.data() as any;
           return {
+            id: d.id,
             dateKey: toText(x.dateKey || d.id),
             sabak: toText(x.sabak),
             sabakDhor: toText(x.sabakDhor),
@@ -186,6 +208,15 @@ export default function AdminStudentOverviewPage() {
             weeklyGoal: toText(x.weeklyGoal),
             sabakDhorMistakes: toText(x.sabakDhorMistakes),
             dhorMistakes: toText(x.dhorMistakes),
+
+            weeklyGoalWeekKey: toText(x.weeklyGoalWeekKey),
+            weeklyGoalStartDateKey: toText(x.weeklyGoalStartDateKey),
+            weeklyGoalCompletedDateKey: toText(x.weeklyGoalCompletedDateKey),
+            weeklyGoalDurationDays:
+              x.weeklyGoalDurationDays !== undefined && x.weeklyGoalDurationDays !== null
+                ? String(x.weeklyGoalDurationDays)
+                : "",
+            weeklyGoalCompleted: x.weeklyGoalCompleted === true,
           };
         });
 
@@ -197,7 +228,7 @@ export default function AdminStudentOverviewPage() {
 
     if (studentUid) {
       loadStudent();
-      loadLogs();
+      loadAllLogs();
     }
   }, [studentUid]);
 
@@ -235,10 +266,16 @@ export default function AdminStudentOverviewPage() {
     );
   }
 
+  const goalStatus = snapshot.weeklyGoalCompletedDateKey
+    ? `Completed in ${snapshot.weeklyGoalDurationDays || "—"} day(s)`
+    : snapshot.weeklyGoal
+    ? "In progress"
+    : "No goal set";
+
   return (
     <Shell
       title={studentEmail ? studentEmail : "Student"}
-      subtitle="Snapshot + recent logs"
+      subtitle="Full student data (snapshot + weekly goal + full history)"
       rightSlot={
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Link
@@ -258,30 +295,34 @@ export default function AdminStudentOverviewPage() {
     >
       {/* Snapshot cards */}
       <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="Weekly Goal" value={snapshot.weeklyGoal} sub="Sabak target for the week" />
+        <StatCard label="Weekly Goal" value={snapshot.weeklyGoal} sub={snapshot.weeklyGoalWeekKey || ""} />
+        <StatCard label="Goal Status" value={goalStatus} sub={`Started: ${snapshot.weeklyGoalStartDateKey || "—"}`} />
+        <StatCard label="Goal Completed" value={snapshot.weeklyGoalCompletedDateKey || "—"} sub={`Duration: ${snapshot.weeklyGoalDurationDays ? `${snapshot.weeklyGoalDurationDays} day(s)` : "—"}`} />
+
         <StatCard label="Current Sabak" value={snapshot.currentSabak} />
         <StatCard label="Current Sabak Dhor" value={snapshot.currentSabakDhor} />
         <StatCard label="Current Dhor" value={snapshot.currentDhor} />
         <StatCard label="Sabak Dhor Mistakes" value={snapshot.currentSabakDhorMistakes} />
         <StatCard label="Dhor Mistakes" value={snapshot.currentDhorMistakes} />
+        <StatCard label="Total Logs" value={String(logs.length)} sub="All saved days" />
       </div>
 
-      {/* Logs */}
+      {/* ALL Logs */}
       <div className="mt-8 rounded-3xl border border-gray-200 bg-white/70 backdrop-blur p-6 sm:p-8 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
             <div className="text-sm text-gray-600">History</div>
             <div className="mt-1 text-2xl font-semibold tracking-tight">
-              Recent logs
+              All logs
             </div>
             <div className="mt-1 text-sm text-gray-700">
-              Showing the most recent {Math.min(logs.length, 30)} entries.
+              Showing {logs.length} total entries.
             </div>
           </div>
 
           <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white/70 px-4 py-2 text-xs font-semibold text-gray-700 w-fit">
             <span className="h-2 w-2 rounded-full bg-[#9c7c38]" />
-            Updates live
+            Full history
           </div>
         </div>
 
@@ -299,13 +340,21 @@ export default function AdminStudentOverviewPage() {
           <div className="mt-6 grid gap-3">
             {logs.map((r) => (
               <div
-                key={r.dateKey}
+                key={r.id}
                 className="rounded-2xl border border-gray-200 bg-white/70 p-5 hover:bg-white transition-colors"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="font-semibold text-gray-900">{r.dateKey}</div>
-                  <div className="text-xs text-gray-600">
-                    Mistakes: SD {r.sabakDhorMistakes || "—"} • D {r.dhorMistakes || "—"}
+                  <div className="flex flex-wrap gap-2">
+                    <span className="text-xs text-gray-600">
+                      Mistakes: SD {r.sabakDhorMistakes || "—"} • D {r.dhorMistakes || "—"}
+                    </span>
+
+                    {r.weeklyGoalCompleted ? (
+                      <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                        Goal completed ({r.weeklyGoalDurationDays || "—"} day(s))
+                      </span>
+                    ) : null}
                   </div>
                 </div>
 
@@ -323,6 +372,18 @@ export default function AdminStudentOverviewPage() {
                     <div className="font-semibold">{r.dhor || "—"}</div>
                   </div>
                 </div>
+
+                {r.weeklyGoal ? (
+                  <div className="mt-3 rounded-xl border border-gray-200 bg-white/70 px-3 py-2">
+                    <div className="text-xs text-gray-500">Weekly Goal Snapshot</div>
+                    <div className="font-semibold">{r.weeklyGoal}</div>
+                    <div className="mt-1 text-xs text-gray-600">
+                      {r.weeklyGoalWeekKey ? `Week: ${r.weeklyGoalWeekKey}` : ""}
+                      {r.weeklyGoalStartDateKey ? ` • Started: ${r.weeklyGoalStartDateKey}` : ""}
+                      {r.weeklyGoalCompletedDateKey ? ` • Completed: ${r.weeklyGoalCompletedDateKey}` : ""}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
