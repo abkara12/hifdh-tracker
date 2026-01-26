@@ -1,117 +1,70 @@
+/* app/admin/student/[uid]/overview/page.tsx */
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  orderBy,
-  query,
-} from "firebase/firestore";
+import { collection, getDoc, getDocs, orderBy, query, doc } from "firebase/firestore";
 import { auth, db } from "../../../../lib/firebase";
 
+/* ---------------- helpers ---------------- */
 function toText(v: unknown) {
   if (v === null || v === undefined) return "";
   return typeof v === "string" ? v : String(v);
 }
 
+function num(v: unknown) {
+  const s = toText(v).trim();
+  if (!s) return 0;
+  const m = s.replace(",", ".").match(/(\d+(\.\d+)?)/);
+  return m ? Number(m[1]) : 0;
+}
+
 type LogRow = {
   id: string;
-  dateKey: string;
-  sabak: string;
-  sabakDhor: string;
-  dhor: string;
-  weeklyGoal: string;
-  sabakDhorMistakes: string;
-  dhorMistakes: string;
+  dateKey?: string;
+  sabak?: string;
+  sabakDhor?: string;
+  dhor?: string;
+  weeklyGoal?: string;
 
-  weeklyGoalWeekKey?: string;
-  weeklyGoalStartDateKey?: string;
-  weeklyGoalCompletedDateKey?: string;
-  weeklyGoalDurationDays?: string;
-  weeklyGoalCompleted?: boolean;
+  // ✅ mistakes
+  sabakDhorMistakes?: string;
+  dhorMistakes?: string;
 };
 
-function Shell({
-  title,
-  subtitle,
-  rightSlot,
-  children,
-}: {
-  title: string;
-  subtitle?: string;
-  rightSlot?: React.ReactNode;
-  children: React.ReactNode;
-}) {
+async function fetchLogs(uid: string): Promise<LogRow[]> {
+  const q = query(collection(db, "users", uid, "logs"), orderBy("dateKey", "desc"));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+}
+
+function Badge({ children }: { children: React.ReactNode }) {
   return (
-    <main className="min-h-screen text-gray-900">
-      <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#efe8da] via-[#f7f4ee] to-white" />
-        <div className="absolute -top-56 left-[-10%] h-[780px] w-[780px] rounded-full bg-[#9c7c38]/25 blur-3xl" />
-        <div className="absolute top-[-20%] right-[-15%] h-[900px] w-[900px] rounded-full bg-black/15 blur-3xl" />
-        <div className="absolute -bottom-72 left-[20%] h-[980px] w-[980px] rounded-full bg-[#9c7c38]/18 blur-3xl" />
-        <div
-          className="absolute inset-0 opacity-[0.14]"
-          style={{
-            backgroundImage:
-              "linear-gradient(45deg, rgba(0,0,0,0.18) 1px, transparent 1px), linear-gradient(-45deg, rgba(0,0,0,0.18) 1px, transparent 1px)",
-            backgroundSize: "72px 72px",
-            backgroundPosition: "0 0, 36px 36px",
-          }}
-        />
-        <div className="absolute inset-0 bg-[radial-gradient(900px_circle_at_50%_12%,transparent_55%,rgba(0,0,0,0.10))]" />
-      </div>
-
-      <div className="max-w-6xl mx-auto px-5 sm:px-10 py-8 sm:py-10">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <p className="uppercase tracking-widest text-xs text-[#9c7c38]">
-              Admin → Student Overview
-            </p>
-            <h1 className="mt-2 text-2xl sm:text-4xl font-semibold tracking-tight break-words">
-              {title}
-            </h1>
-            {subtitle ? (
-              <p className="mt-2 text-gray-700 leading-relaxed max-w-2xl">
-                {subtitle}
-              </p>
-            ) : null}
-          </div>
-
-          {rightSlot ? <div className="w-full sm:w-auto">{rightSlot}</div> : null}
-        </div>
-
-        <div className="mt-7 sm:mt-8">{children}</div>
-      </div>
-    </main>
+    <span className="inline-flex items-center rounded-full border border-gray-200 bg-white/70 px-3 py-1 text-xs font-medium text-gray-700 backdrop-blur">
+      {children}
+    </span>
   );
 }
 
-function StatCard({
-  label,
-  value,
-  sub,
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-}) {
+function MistakePill({ value, isBad }: { value: string; isBad: boolean }) {
+  const v = toText(value) || "—";
   return (
-    <div className="group relative overflow-hidden rounded-3xl border border-gray-200 bg-white/70 backdrop-blur p-6 shadow-sm hover:shadow-lg transition-all duration-300">
-      <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[#9c7c38]/12 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      <div className="text-xs uppercase tracking-widest text-[#9c7c38]">{label}</div>
-      <div className="mt-2 text-lg sm:text-2xl font-semibold text-gray-900 break-words">
-        {value || "—"}
-      </div>
-      {sub ? <div className="mt-2 text-sm text-gray-600">{sub}</div> : null}
-    </div>
+    <span
+      className={[
+        "inline-flex items-center justify-center min-w-[2.25rem] h-9 px-3 rounded-full border text-sm font-semibold",
+        isBad
+          ? "border-red-300 bg-red-50 text-red-700"
+          : "border-gray-200 bg-white/70 text-gray-800",
+      ].join(" ")}
+    >
+      {v}
+    </span>
   );
 }
 
+/* ---------------- page ---------------- */
 export default function AdminStudentOverviewPage() {
   const params = useParams<{ uid: string }>();
   const studentUid = params.uid;
@@ -120,24 +73,10 @@ export default function AdminStudentOverviewPage() {
   const [checking, setChecking] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const [studentEmail, setStudentEmail] = useState("");
+  const [studentEmail, setStudentEmail] = useState<string>("");
 
-  const [snapshot, setSnapshot] = useState({
-    weeklyGoal: "",
-    weeklyGoalWeekKey: "",
-    weeklyGoalStartDateKey: "",
-    weeklyGoalCompletedDateKey: "",
-    weeklyGoalDurationDays: "",
-
-    currentSabak: "",
-    currentSabakDhor: "",
-    currentDhor: "",
-    currentSabakDhorMistakes: "",
-    currentDhorMistakes: "",
-  });
-
-  const [logs, setLogs] = useState<LogRow[]>([]);
-  const [loadingLogs, setLoadingLogs] = useState(true);
+  const [rows, setRows] = useState<LogRow[]>([]);
+  const [loadingRows, setLoadingRows] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -162,233 +101,304 @@ export default function AdminStudentOverviewPage() {
   }, []);
 
   useEffect(() => {
-    async function loadStudent() {
+    async function loadStudentMeta() {
       const sDoc = await getDoc(doc(db, "users", studentUid));
       if (sDoc.exists()) {
         const data = sDoc.data() as any;
-
         setStudentEmail(toText(data.email));
-
-        setSnapshot({
-          weeklyGoal: toText(data.weeklyGoal),
-          weeklyGoalWeekKey: toText(data.weeklyGoalWeekKey),
-          weeklyGoalStartDateKey: toText(data.weeklyGoalStartDateKey),
-          weeklyGoalCompletedDateKey: toText(data.weeklyGoalCompletedDateKey),
-          weeklyGoalDurationDays:
-            data.weeklyGoalDurationDays !== undefined && data.weeklyGoalDurationDays !== null
-              ? String(data.weeklyGoalDurationDays)
-              : "",
-
-          currentSabak: toText(data.currentSabak),
-          currentSabakDhor: toText(data.currentSabakDhor),
-          currentDhor: toText(data.currentDhor),
-          currentSabakDhorMistakes: toText(data.currentSabakDhorMistakes),
-          currentDhorMistakes: toText(data.currentDhorMistakes),
-        });
       }
     }
 
-    async function loadAllLogs() {
-      setLoadingLogs(true);
+    async function loadLogs() {
+      setLoadingRows(true);
       try {
-        const qy = query(
-          collection(db, "users", studentUid, "logs"),
-          orderBy("dateKey", "desc")
-        );
-        const snap = await getDocs(qy);
-
-        const rows: LogRow[] = snap.docs.map((d) => {
-          const x = d.data() as any;
-          return {
-            id: d.id,
-            dateKey: toText(x.dateKey || d.id),
-            sabak: toText(x.sabak),
-            sabakDhor: toText(x.sabakDhor),
-            dhor: toText(x.dhor),
-            weeklyGoal: toText(x.weeklyGoal),
-            sabakDhorMistakes: toText(x.sabakDhorMistakes),
-            dhorMistakes: toText(x.dhorMistakes),
-
-            weeklyGoalWeekKey: toText(x.weeklyGoalWeekKey),
-            weeklyGoalStartDateKey: toText(x.weeklyGoalStartDateKey),
-            weeklyGoalCompletedDateKey: toText(x.weeklyGoalCompletedDateKey),
-            weeklyGoalDurationDays:
-              x.weeklyGoalDurationDays !== undefined && x.weeklyGoalDurationDays !== null
-                ? String(x.weeklyGoalDurationDays)
-                : "",
-            weeklyGoalCompleted: x.weeklyGoalCompleted === true,
-          };
-        });
-
-        setLogs(rows);
+        const data = await fetchLogs(studentUid);
+        setRows(data);
       } finally {
-        setLoadingLogs(false);
+        setLoadingRows(false);
       }
     }
 
     if (studentUid) {
-      loadStudent();
-      loadAllLogs();
+      loadStudentMeta();
+      loadLogs();
     }
   }, [studentUid]);
 
+  const summary = useMemo(() => {
+    if (!rows.length) return { totalDays: 0, avgSabak: 0, lastGoal: 0 };
+    const sabakNums = rows.map((r) => num(r.sabak)).filter((n) => n > 0);
+    const avgSabak =
+      sabakNums.length ? sabakNums.reduce((a, b) => a + b, 0) / sabakNums.length : 0;
+    const lastGoal = num(rows[0]?.weeklyGoal);
+    return { totalDays: rows.length, avgSabak, lastGoal };
+  }, [rows]);
+
   if (checking) {
     return (
-      <Shell title="Loading…" subtitle="Opening student overview…">
-        <div className="rounded-3xl border border-gray-200 bg-white/60 backdrop-blur p-6 shadow-sm">
-          <div className="h-6 w-2/3 bg-black/10 rounded-2xl animate-pulse" />
-          <div className="mt-4 h-12 bg-black/10 rounded-2xl animate-pulse" />
+      <main className="min-h-screen">
+        <FancyBg />
+        <div className="max-w-6xl mx-auto px-6 sm:px-10 py-16">
+          <div className="rounded-3xl border border-gray-200 bg-white/70 backdrop-blur p-8 shadow-sm">
+            Loading…
+          </div>
         </div>
-      </Shell>
+      </main>
     );
   }
 
   if (!me) {
     return (
-      <Shell title="Please sign in" subtitle="You must sign in to view this page.">
-        <div className="rounded-3xl border border-gray-200 bg-white/70 backdrop-blur p-6 shadow-sm">
-          <Link className="underline" href="/login">
-            Go to login
-          </Link>
+      <main className="min-h-screen">
+        <FancyBg />
+        <div className="max-w-6xl mx-auto px-6 sm:px-10 py-16">
+          <div className="rounded-3xl border border-gray-200 bg-white/70 backdrop-blur p-10 shadow-sm">
+            <h1 className="text-3xl font-semibold tracking-tight">Please sign in</h1>
+            <p className="mt-3 text-gray-700">You must sign in to view this student overview.</p>
+            <div className="mt-6 flex gap-3">
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-center h-11 px-6 rounded-full bg-black text-white text-sm font-medium hover:bg-gray-900"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/admin"
+                className="inline-flex items-center justify-center h-11 px-6 rounded-full border border-gray-300 bg-white/60 backdrop-blur text-sm font-medium hover:bg-white"
+              >
+                Back to Admin
+              </Link>
+            </div>
+          </div>
         </div>
-      </Shell>
+      </main>
     );
   }
 
   if (!isAdmin) {
     return (
-      <Shell title="Access denied" subtitle="This account is not marked as admin.">
-        <div className="rounded-3xl border border-gray-200 bg-white/70 backdrop-blur p-6 shadow-sm">
-          <div className="text-sm text-gray-600">Signed in as</div>
-          <div className="mt-1 font-semibold">{me.email}</div>
+      <main className="min-h-screen">
+        <FancyBg />
+        <div className="max-w-6xl mx-auto px-6 sm:px-10 py-16">
+          <div className="rounded-3xl border border-gray-200 bg-white/70 backdrop-blur p-10 shadow-sm">
+            <h1 className="text-3xl font-semibold tracking-tight">Not allowed</h1>
+            <p className="mt-3 text-gray-700">This account is not an admin.</p>
+            <div className="mt-6 flex gap-3">
+              <Link href="/" className="underline">
+                Home
+              </Link>
+              <Link href="/admin" className="underline">
+                Admin
+              </Link>
+            </div>
+          </div>
         </div>
-      </Shell>
+      </main>
     );
   }
 
-  const goalStatus = snapshot.weeklyGoalCompletedDateKey
-    ? `Completed in ${snapshot.weeklyGoalDurationDays || "—"} day(s)`
-    : snapshot.weeklyGoal
-    ? "In progress"
-    : "No goal set";
-
   return (
-    <Shell
-      title={studentEmail ? studentEmail : "Student"}
-      subtitle="Full student data (snapshot + weekly goal + full history)"
-      rightSlot={
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <Link
-            href="/admin"
-            className="inline-flex w-full sm:w-auto items-center justify-center h-11 px-5 rounded-full border border-gray-200 bg-white/70 hover:bg-white transition-colors text-sm font-semibold"
-          >
-            Back
-          </Link>
+    <main className="min-h-screen text-gray-900">
+      <FancyBg />
+
+      <header className="max-w-6xl mx-auto px-6 sm:px-10 py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="h-11 w-11 rounded-2xl bg-black text-white grid place-items-center shadow-sm">
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none">
+              <path
+                d="M8 7V4m8 3V4M5 11h14M7 21h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2z"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+          <div className="min-w-0">
+            <div className="text-sm text-gray-600">Student Overview</div>
+            <div className="text-xl font-semibold tracking-tight truncate">
+              {studentEmail || "Student"}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
           <Link
             href={`/admin/student/${studentUid}`}
-            className="inline-flex w-full sm:w-auto items-center justify-center h-11 px-5 rounded-full bg-black text-white hover:bg-gray-900 transition-colors text-sm font-semibold shadow-sm"
+            className="inline-flex items-center justify-center h-11 px-5 rounded-full bg-black text-white text-sm font-medium hover:bg-gray-900"
           >
             Log Work
           </Link>
+          <Link
+            href="/admin"
+            className="inline-flex items-center justify-center h-11 px-5 rounded-full border border-gray-300 bg-white/60 backdrop-blur text-sm font-medium hover:bg-white"
+          >
+            Back
+          </Link>
         </div>
-      }
-    >
-      {/* Snapshot cards */}
-      <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="Weekly Goal" value={snapshot.weeklyGoal} sub={snapshot.weeklyGoalWeekKey || ""} />
-        <StatCard label="Goal Status" value={goalStatus} sub={`Started: ${snapshot.weeklyGoalStartDateKey || "—"}`} />
-        <StatCard label="Goal Completed" value={snapshot.weeklyGoalCompletedDateKey || "—"} sub={`Duration: ${snapshot.weeklyGoalDurationDays ? `${snapshot.weeklyGoalDurationDays} day(s)` : "—"}`} />
+      </header>
 
-        <StatCard label="Current Sabak" value={snapshot.currentSabak} />
-        <StatCard label="Current Sabak Dhor" value={snapshot.currentSabakDhor} />
-        <StatCard label="Current Dhor" value={snapshot.currentDhor} />
-        <StatCard label="Sabak Dhor Mistakes" value={snapshot.currentSabakDhorMistakes} />
-        <StatCard label="Dhor Mistakes" value={snapshot.currentDhorMistakes} />
-        <StatCard label="Total Logs" value={String(logs.length)} sub="All saved days" />
-      </div>
-
-      {/* ALL Logs */}
-      <div className="mt-8 rounded-3xl border border-gray-200 bg-white/70 backdrop-blur p-6 sm:p-8 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-          <div>
-            <div className="text-sm text-gray-600">History</div>
-            <div className="mt-1 text-2xl font-semibold tracking-tight">
-              All logs
-            </div>
-            <div className="mt-1 text-sm text-gray-700">
-              Showing {logs.length} total entries.
-            </div>
-          </div>
-
-          <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white/70 px-4 py-2 text-xs font-semibold text-gray-700 w-fit">
-            <span className="h-2 w-2 rounded-full bg-[#9c7c38]" />
-            Full history
-          </div>
+      <section className="max-w-6xl mx-auto px-6 sm:px-10 pb-16">
+        {/* Summary cards */}
+        <div className="grid sm:grid-cols-3 gap-4 mb-8">
+          <StatCard label="Days logged" value={String(summary.totalDays)} />
+          <StatCard
+            label="Average Sabak"
+            value={summary.avgSabak ? summary.avgSabak.toFixed(1) : "—"}
+          />
+          <StatCard
+            label="Latest weekly goal"
+            value={summary.lastGoal ? String(summary.lastGoal) : "—"}
+          />
         </div>
 
-        {loadingLogs ? (
-          <div className="mt-6 grid gap-3">
-            <div className="h-16 bg-black/10 rounded-2xl animate-pulse" />
-            <div className="h-16 bg-black/10 rounded-2xl animate-pulse" />
-            <div className="h-16 bg-black/10 rounded-2xl animate-pulse" />
+        <div className="rounded-3xl border border-gray-200 bg-white/70 backdrop-blur shadow-sm overflow-hidden">
+          <div className="p-6 sm:p-8 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <p className="uppercase tracking-widest text-xs text-[#9c7c38]">History table</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight">Student daily logs</h2>
+              <p className="mt-2 text-gray-700">
+                All entries (newest → oldest). Mistakes show red when too high.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Badge>Admin view</Badge>
+              <Badge>Sorted newest → oldest</Badge>
+              <Badge>Goal indicator</Badge>
+            </div>
           </div>
-        ) : logs.length === 0 ? (
-          <div className="mt-6 rounded-2xl border border-gray-200 bg-white/70 p-5 text-sm text-gray-700">
-            No logs yet for this student.
-          </div>
-        ) : (
-          <div className="mt-6 grid gap-3">
-            {logs.map((r) => (
-              <div
-                key={r.id}
-                className="rounded-2xl border border-gray-200 bg-white/70 p-5 hover:bg-white transition-colors"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div className="font-semibold text-gray-900">{r.dateKey}</div>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="text-xs text-gray-600">
-                      Mistakes: SD {r.sabakDhorMistakes || "—"} • D {r.dhorMistakes || "—"}
-                    </span>
 
-                    {r.weeklyGoalCompleted ? (
-                      <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                        Goal completed ({r.weeklyGoalDurationDays || "—"} day(s))
-                      </span>
-                    ) : null}
-                  </div>
+          <div className="p-6 sm:p-8">
+            {loadingRows ? (
+              <div className="text-gray-700">Loading logs…</div>
+            ) : rows.length === 0 ? (
+              <div className="rounded-2xl border border-gray-200 bg-white/70 p-6">
+                <div className="text-lg font-semibold">No logs yet</div>
+                <p className="mt-2 text-gray-700">
+                  Once the student has entries, they will show here.
+                </p>
+                <div className="mt-4">
+                  <Link
+                    href={`/admin/student/${studentUid}`}
+                    className="inline-flex items-center justify-center h-11 px-6 rounded-full bg-black text-white text-sm font-medium hover:bg-gray-900"
+                  >
+                    Log first entry
+                  </Link>
                 </div>
-
-                <div className="mt-3 grid gap-2 sm:grid-cols-3 text-sm">
-                  <div className="rounded-xl border border-gray-200 bg-white/70 px-3 py-2">
-                    <div className="text-xs text-gray-500">Sabak</div>
-                    <div className="font-semibold">{r.sabak || "—"}</div>
-                  </div>
-                  <div className="rounded-xl border border-gray-200 bg-white/70 px-3 py-2">
-                    <div className="text-xs text-gray-500">Sabak Dhor</div>
-                    <div className="font-semibold">{r.sabakDhor || "—"}</div>
-                  </div>
-                  <div className="rounded-xl border border-gray-200 bg-white/70 px-3 py-2">
-                    <div className="text-xs text-gray-500">Dhor</div>
-                    <div className="font-semibold">{r.dhor || "—"}</div>
-                  </div>
-                </div>
-
-                {r.weeklyGoal ? (
-                  <div className="mt-3 rounded-xl border border-gray-200 bg-white/70 px-3 py-2">
-                    <div className="text-xs text-gray-500">Weekly Goal Snapshot</div>
-                    <div className="font-semibold">{r.weeklyGoal}</div>
-                    <div className="mt-1 text-xs text-gray-600">
-                      {r.weeklyGoalWeekKey ? `Week: ${r.weeklyGoalWeekKey}` : ""}
-                      {r.weeklyGoalStartDateKey ? ` • Started: ${r.weeklyGoalStartDateKey}` : ""}
-                      {r.weeklyGoalCompletedDateKey ? ` • Completed: ${r.weeklyGoalCompletedDateKey}` : ""}
-                    </div>
-                  </div>
-                ) : null}
               </div>
-            ))}
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-[980px] w-full">
+                  <thead>
+                    <tr className="text-left text-xs uppercase tracking-widest text-gray-500">
+                      <th className="pb-3 pr-4">Date</th>
+                      <th className="pb-3 pr-4">Sabak</th>
+                      <th className="pb-3 pr-4">Sabak Dhor</th>
+                      <th className="pb-3 pr-4">Sabak Dhor Mistakes</th>
+                      <th className="pb-3 pr-4">Dhor</th>
+                      <th className="pb-3 pr-4">Dhor Mistakes</th>
+                      <th className="pb-3 pr-4">Weekly Goal</th>
+                      <th className="pb-3">Goal Status</th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-gray-200">
+                    {rows.map((r) => {
+                      const g = num(r.weeklyGoal);
+                      const s = num(r.sabak);
+                      const reached = g > 0 && s >= g;
+
+                      const sdMist = num(r.sabakDhorMistakes);
+                      const dMist = num(r.dhorMistakes);
+
+                      const sabakDhorBad = sdMist > 4; // 5+ red
+                      const dhorBad = dMist >= 3; // 3+ red
+
+                      return (
+                        <tr key={r.id} className="text-sm">
+                          <td className="py-4 pr-4 font-medium text-gray-900">
+                            {r.dateKey ?? r.id}
+                          </td>
+
+                          <td className="py-4 pr-4 text-gray-800">{toText(r.sabak) || "—"}</td>
+                          <td className="py-4 pr-4 text-gray-800">{toText(r.sabakDhor) || "—"}</td>
+
+                          <td className="py-4 pr-4">
+                            <MistakePill value={toText(r.sabakDhorMistakes)} isBad={sabakDhorBad} />
+                          </td>
+
+                          <td className="py-4 pr-4 text-gray-800">{toText(r.dhor) || "—"}</td>
+
+                          <td className="py-4 pr-4">
+                            <MistakePill value={toText(r.dhorMistakes)} isBad={dhorBad} />
+                          </td>
+
+                          <td className="py-4 pr-4 text-gray-800">{toText(r.weeklyGoal) || "—"}</td>
+
+                          <td className="py-4">
+                            {g > 0 ? (
+                              <span
+                                className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold border ${
+                                  reached
+                                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                    : "border-amber-200 bg-amber-50 text-amber-700"
+                                }`}
+                              >
+                                <span
+                                  className={`h-2 w-2 rounded-full ${
+                                    reached ? "bg-emerald-500" : "bg-amber-500"
+                                  }`}
+                                />
+                                {reached ? "Reached" : "In progress"}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-gray-500">No goal set</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        )}
-      </div>
-    </Shell>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+/* ---------------- UI bits ---------------- */
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="group relative overflow-hidden rounded-3xl border border-gray-200 bg-white/70 backdrop-blur p-6 shadow-sm hover:shadow-lg transition-all duration-300">
+      <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-[#9c7c38] via-[#9c7c38]/60 to-transparent" />
+      <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-[#9c7c38]/10 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+      <div className="text-xs uppercase tracking-widest text-gray-500">{label}</div>
+      <div className="mt-2 text-3xl font-semibold tracking-tight text-gray-900">{value}</div>
+    </div>
+  );
+}
+
+function FancyBg() {
+  return (
+    <div className="pointer-events-none fixed inset-0 -z-10">
+      <div className="absolute inset-0 bg-gradient-to-b from-[#efe8da] via-[#f7f4ee] to-white" />
+      <div className="absolute -top-56 left-[-10%] h-[780px] w-[780px] rounded-full bg-[#9c7c38]/30 blur-3xl" />
+      <div className="absolute top-[-20%] right-[-15%] h-[900px] w-[900px] rounded-full bg-black/20 blur-3xl" />
+      <div className="absolute -bottom-72 left-[20%] h-[980px] w-[980px] rounded-full bg-[#9c7c38]/22 blur-3xl" />
+      <div
+        className="absolute inset-0 opacity-[0.18]"
+        style={{
+          backgroundImage:
+            "linear-gradient(45deg, rgba(0,0,0,0.18) 1px, transparent 1px), linear-gradient(-45deg, rgba(0,0,0,0.18) 1px, transparent 1px)",
+          backgroundSize: "72px 72px",
+          backgroundPosition: "0 0, 36px 36px",
+        }}
+      />
+      <div className="absolute inset-0 bg-[radial-gradient(900px_circle_at_50%_15%,transparent_55%,rgba(0,0,0,0.12))]" />
+    </div>
   );
 }
