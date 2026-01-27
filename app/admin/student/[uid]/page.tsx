@@ -62,6 +62,13 @@ function toText(v: unknown) {
   return typeof v === "string" ? v : String(v);
 }
 
+// helper: prefer new field if present, else fallback
+function pickText(primary: unknown, fallback: unknown) {
+  const p = toText(primary).trim();
+  if (p) return p;
+  return toText(fallback);
+}
+
 /** -------------------- UI shell -------------------- */
 function Shell({
   title,
@@ -157,7 +164,9 @@ export default function AdminStudentPage() {
   const [sabakDhor, setSabakDhor] = useState("");
   const [dhor, setDhor] = useState("");
 
-  // ✅ reading quality fields (NEW)
+  // ✅ reading quality fields
+  // IMPORTANT: Student overview expects sabakRead / sabakDhorRead / dhorRead
+  // We keep quality state names, but we will SAVE to BOTH field-name styles.
   const [sabakReadQuality, setSabakReadQuality] = useState("");
   const [sabakReadNotes, setSabakReadNotes] = useState("");
 
@@ -167,7 +176,7 @@ export default function AdminStudentPage() {
   const [dhorReadQuality, setDhorReadQuality] = useState("");
   const [dhorReadNotes, setDhorReadNotes] = useState("");
 
-  // mistakes fields (keep, but no special red logic anywhere)
+  // mistakes fields
   const [sabakDhorMistakes, setSabakDhorMistakes] = useState("");
   const [dhorMistakes, setDhorMistakes] = useState("");
 
@@ -238,14 +247,17 @@ export default function AdminStudentPage() {
         setSabakDhorMistakes(toText(data.currentSabakDhorMistakes));
         setDhorMistakes(toText(data.currentDhorMistakes));
 
-        // ✅ seed reading snapshot (NEW)
-        setSabakReadQuality(toText(data.currentSabakReadQuality));
+        // ✅ seed reading snapshot
+        // read from either naming style
+        setSabakReadQuality(pickText(data.currentSabakRead, data.currentSabakReadQuality));
         setSabakReadNotes(toText(data.currentSabakReadNotes));
 
-        setSabakDhorReadQuality(toText(data.currentSabakDhorReadQuality));
+        setSabakDhorReadQuality(
+          pickText(data.currentSabakDhorRead, data.currentSabakDhorReadQuality)
+        );
         setSabakDhorReadNotes(toText(data.currentSabakDhorReadNotes));
 
-        setDhorReadQuality(toText(data.currentDhorReadQuality));
+        setDhorReadQuality(pickText(data.currentDhorRead, data.currentDhorReadQuality));
         setDhorReadNotes(toText(data.currentDhorReadNotes));
       }
 
@@ -259,14 +271,14 @@ export default function AdminStudentPage() {
         setSabakDhorMistakes(toText(d.sabakDhorMistakes));
         setDhorMistakes(toText(d.dhorMistakes));
 
-        // ✅ reading fields from today log (NEW)
-        setSabakReadQuality(toText(d.sabakReadQuality));
+        // ✅ reading fields from today log (read from either naming style)
+        setSabakReadQuality(pickText(d.sabakRead, d.sabakReadQuality));
         setSabakReadNotes(toText(d.sabakReadNotes));
 
-        setSabakDhorReadQuality(toText(d.sabakDhorReadQuality));
+        setSabakDhorReadQuality(pickText(d.sabakDhorRead, d.sabakDhorReadQuality));
         setSabakDhorReadNotes(toText(d.sabakDhorReadNotes));
 
-        setDhorReadQuality(toText(d.dhorReadQuality));
+        setDhorReadQuality(pickText(d.dhorRead, d.dhorReadQuality));
         setDhorReadNotes(toText(d.dhorReadNotes));
 
         if (!weeklyGoal) setWeeklyGoal(toText(d.weeklyGoal));
@@ -320,12 +332,19 @@ export default function AdminStudentPage() {
           sabakDhor,
           dhor,
 
-          // ✅ reading quality (NEW)
+          // ✅ Save the EXACT field names the student table expects
+          sabakRead: sabakReadQuality,
+          sabakDhorRead: sabakDhorReadQuality,
+          dhorRead: dhorReadQuality,
+
+          // ✅ Keep your existing "Quality" keys too (backwards/for future)
           sabakReadQuality,
-          sabakReadNotes,
           sabakDhorReadQuality,
-          sabakDhorReadNotes,
           dhorReadQuality,
+
+          // notes
+          sabakReadNotes,
+          sabakDhorReadNotes,
           dhorReadNotes,
 
           sabakDhorMistakes,
@@ -358,12 +377,17 @@ export default function AdminStudentPage() {
           currentSabakDhor: sabakDhor,
           currentDhor: dhor,
 
-          // ✅ reading snapshot (NEW)
+          // ✅ Save snapshot in BOTH naming styles too
+          currentSabakRead: sabakReadQuality,
+          currentSabakDhorRead: sabakDhorReadQuality,
+          currentDhorRead: dhorReadQuality,
+
           currentSabakReadQuality: sabakReadQuality,
-          currentSabakReadNotes: sabakReadNotes,
           currentSabakDhorReadQuality: sabakDhorReadQuality,
-          currentSabakDhorReadNotes: sabakDhorReadNotes,
           currentDhorReadQuality: dhorReadQuality,
+
+          currentSabakReadNotes: sabakReadNotes,
+          currentSabakDhorReadNotes: sabakDhorReadNotes,
           currentDhorReadNotes: dhorReadNotes,
 
           currentSabakDhorMistakes: sabakDhorMistakes,
