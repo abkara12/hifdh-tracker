@@ -24,14 +24,21 @@ function num(v: unknown) {
 type LogRow = {
   id: string;
   dateKey?: string;
+
   sabak?: string;
   sabakDhor?: string;
   dhor?: string;
+
   weeklyGoal?: string;
 
-  // ✅ mistakes
+  // mistakes
   sabakDhorMistakes?: string;
   dhorMistakes?: string;
+
+  // ✅ NEW: reading quality (saved in logs)
+  sabakReadQuality?: string;
+  sabakDhorReadQuality?: string;
+  dhorReadQuality?: string;
 };
 
 async function fetchLogs(uid: string): Promise<LogRow[]> {
@@ -44,22 +51,6 @@ function Badge({ children }: { children: React.ReactNode }) {
   return (
     <span className="inline-flex items-center rounded-full border border-gray-200 bg-white/70 px-3 py-1 text-xs font-medium text-gray-700 backdrop-blur">
       {children}
-    </span>
-  );
-}
-
-function MistakePill({ value, isBad }: { value: string; isBad: boolean }) {
-  const v = toText(value) || "—";
-  return (
-    <span
-      className={[
-        "inline-flex items-center justify-center min-w-[2.25rem] h-9 px-3 rounded-full border text-sm font-semibold",
-        isBad
-          ? "border-red-300 bg-red-50 text-red-700"
-          : "border-gray-200 bg-white/70 text-gray-800",
-      ].join(" ")}
-    >
-      {v}
     </span>
   );
 }
@@ -257,14 +248,14 @@ export default function AdminStudentOverviewPage() {
               <p className="uppercase tracking-widest text-xs text-[#9c7c38]">History table</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-tight">Student daily logs</h2>
               <p className="mt-2 text-gray-700">
-                All entries (newest → oldest). Mistakes show red when too high.
+                All entries (newest → oldest). Reading quality is shown for each part.
               </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
               <Badge>Admin view</Badge>
               <Badge>Sorted newest → oldest</Badge>
-              <Badge>Goal indicator</Badge>
+              <Badge>Reading quality</Badge>
             </div>
           </div>
 
@@ -288,15 +279,24 @@ export default function AdminStudentOverviewPage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-[980px] w-full">
+                <table className="min-w-[1200px] w-full">
                   <thead>
                     <tr className="text-left text-xs uppercase tracking-widest text-gray-500">
                       <th className="pb-3 pr-4">Date</th>
+
                       <th className="pb-3 pr-4">Sabak</th>
+                      <th className="pb-3 pr-4">Sabak Read</th>
+
                       <th className="pb-3 pr-4">Sabak Dhor</th>
+                      <th className="pb-3 pr-4">Sabak Dhor Read</th>
+
                       <th className="pb-3 pr-4">Sabak Dhor Mistakes</th>
+
                       <th className="pb-3 pr-4">Dhor</th>
+                      <th className="pb-3 pr-4">Dhor Read</th>
+
                       <th className="pb-3 pr-4">Dhor Mistakes</th>
+
                       <th className="pb-3 pr-4">Weekly Goal</th>
                       <th className="pb-3">Goal Status</th>
                     </tr>
@@ -308,12 +308,6 @@ export default function AdminStudentOverviewPage() {
                       const s = num(r.sabak);
                       const reached = g > 0 && s >= g;
 
-                      const sdMist = num(r.sabakDhorMistakes);
-                      const dMist = num(r.dhorMistakes);
-
-                      const sabakDhorBad = sdMist > 4; // 5+ red
-                      const dhorBad = dMist >= 3; // 3+ red
-
                       return (
                         <tr key={r.id} className="text-sm">
                           <td className="py-4 pr-4 font-medium text-gray-900">
@@ -321,16 +315,26 @@ export default function AdminStudentOverviewPage() {
                           </td>
 
                           <td className="py-4 pr-4 text-gray-800">{toText(r.sabak) || "—"}</td>
-                          <td className="py-4 pr-4 text-gray-800">{toText(r.sabakDhor) || "—"}</td>
+                          <td className="py-4 pr-4 text-gray-800">
+                            {toText(r.sabakReadQuality) || "—"}
+                          </td>
 
-                          <td className="py-4 pr-4">
-                            <MistakePill value={toText(r.sabakDhorMistakes)} isBad={sabakDhorBad} />
+                          <td className="py-4 pr-4 text-gray-800">{toText(r.sabakDhor) || "—"}</td>
+                          <td className="py-4 pr-4 text-gray-800">
+                            {toText(r.sabakDhorReadQuality) || "—"}
+                          </td>
+
+                          <td className="py-4 pr-4 text-gray-800">
+                            {toText(r.sabakDhorMistakes) || "—"}
                           </td>
 
                           <td className="py-4 pr-4 text-gray-800">{toText(r.dhor) || "—"}</td>
+                          <td className="py-4 pr-4 text-gray-800">
+                            {toText(r.dhorReadQuality) || "—"}
+                          </td>
 
-                          <td className="py-4 pr-4">
-                            <MistakePill value={toText(r.dhorMistakes)} isBad={dhorBad} />
+                          <td className="py-4 pr-4 text-gray-800">
+                            {toText(r.dhorMistakes) || "—"}
                           </td>
 
                           <td className="py-4 pr-4 text-gray-800">{toText(r.weeklyGoal) || "—"}</td>
