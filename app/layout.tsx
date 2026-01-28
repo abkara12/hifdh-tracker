@@ -29,7 +29,7 @@ description: "Al-Qadr Hifdh Class • Northcliff",
   // ✅ This fixes the browser tab icon (favicon)
   icons: {
     icon: [
-      { url: "/icon-512.png" }, // browser tab icon
+      { url: "/icon-192.png", type: "image/png" },
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
