@@ -671,7 +671,7 @@ export default function Home() {
             <h1 className="mt-6 text-4xl sm:text-6xl font-bold leading-[1.05] tracking-tight">
               Preserve the Qur’an.
               <br />
-              <span className="text-[#9c7c38]">Elevate the Heart.</span>
+              <span className="text-[#8B6B2E]">Elevate the Heart.</span>
             </h1>
 
             <p className="mt-6 text-lg sm:text-xl text-gray-800 leading-relaxed max-w-2xl">
