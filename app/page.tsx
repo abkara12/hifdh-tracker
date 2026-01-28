@@ -524,7 +524,7 @@ export default function Home() {
               Preserve the Qur’an.
               <br />
               {/* ✅ slightly different accent color */}
-              <span className="text-[#2f6f6f]">Elevate the Heart.</span>
+              <span className="text-[#8B6B2E]">Elevate the Heart.</span>
             </h1>
 
             <p className="mt-6 text-lg sm:text-xl text-gray-700 leading-relaxed max-w-2xl">
