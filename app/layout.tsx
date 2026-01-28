@@ -1,56 +1,38 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "./components/AuthProvider";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
-  title: "Al Qadr Hifdh Class",
-description: "Al-Qadr Hifdh Class • Northcliff",
-  // ✅ Make sure this matches the file in /public (see notes below)
+  title: {
+    default: "Al-Qadr Hifdh Class",
+    template: "%s | Al-Qadr Hifdh Class",
+  },
+  description: "Al-Qadr Hifdh Class • Northcliff",
+  applicationName: "Al-Qadr Hifdh Class",
   manifest: "/manifest.webmanifest",
 
-  applicationName: "Al Qadr",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "Al Qadr",
-  },
-
-  // ✅ This fixes the browser tab icon (favicon)
   icons: {
     icon: [
+      // Browser tab icon
       { url: "/icon-192.png", type: "image/png" },
-      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
-    apple: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
+    apple: [
+      // iPhone add-to-home-screen icon fallback
+      { url: "/icon-192.png", type: "image/png" },
+    ],
+    shortcut: ["/icon-192.png"],
   },
-};
 
-export const viewport = {
-  themeColor: "#9c7c38",
+  themeColor: "#0b0b0b",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <AuthProvider>{children}</AuthProvider>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
