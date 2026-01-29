@@ -11,25 +11,23 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
 
   icons: {
+    // ✅ Browser tab + general favicon requests (browsers often request /favicon.ico)
     icon: [
-    { url: "/icons/favicon.ico" }, // IMPORTANT: put favicon.ico in /public (root)
+      { url: "/favicon.ico" },
       { url: "/icons/icon-192.png", type: "image/png", sizes: "192x192" },
     ],
-    apple: [
-      // iPhone add-to-home-screen icon fallback
-      { url: "/icon-192.png", type: "image/png" },
-    ],
-    shortcut: ["/icon-192.png"],
+
+    // ✅ iPhone/iPad Home Screen icon (Safari)
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+
+    // ✅ optional
+    shortcut: [{ url: "/favicon.ico" }],
   },
 
   themeColor: "#0b0b0b",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>{children}</body>
