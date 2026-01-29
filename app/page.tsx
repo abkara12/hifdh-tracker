@@ -904,7 +904,7 @@ export default function Home() {
             />
             <FAQItem
               question="Who teaches the class?"
-              answer="Ml Shaheed Bhabha, a dedicated and experienced teacher with over 4 years of experience, provides personalised guidance and oversight to every student."
+              answer="Ml Shaheed Bhabha and Hafidh Muhammed Saleem Pandor, two dedicated and experienced teachers with over 4 years of experience, provide personalised guidance and oversight to every student."
             />
             <FAQItem
               question="How do students submit their daily progress?"
