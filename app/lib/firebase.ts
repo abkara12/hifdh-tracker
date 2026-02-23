@@ -5,12 +5,12 @@ import { getFirestore } from "firebase/firestore";
 
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDNMCUIGs7xLZ4-J1hfLMwATFy43QF6MZc",
-  authDomain: "al-qadr-hifz-class.firebaseapp.com",
-  projectId: "al-qadr-hifz-class",
-  storageBucket: "al-qadr-hifz-class.firebasestorage.app",
-  messagingSenderId: "1027789437089",
-  appId: "1:1027789437089:web:e2a4b3ac0d12c6de1858e0",
+  apiKey: "AIzaSyCQgvxuj2INUr3GOEP3331jEhxXZvyJTuA",
+  authDomain: "hifdh-tracker-d4d86.firebaseapp.com",
+  projectId: "hifdh-tracker-d4d86",
+  storageBucket: "hifdh-tracker-d4d86.firebasestorage.app",
+  messagingSenderId: "1077806417406",
+  appId: "1:1077806417406:web:d59537907cf1665954ecaf"
 };
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
