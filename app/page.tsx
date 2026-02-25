@@ -636,7 +636,7 @@ export default function Home() {
                 </div>
 
                 <div className="mt-4 flex items-center justify-between text-xs text-gray-600">
-                  <span>© {new Date().getFullYear()} Al Qadr</span>
+                  <span>© {new Date().getFullYear()} Hifdh Journal</span>
                   <button
                     type="button"
                     onClick={closeMenu}
@@ -667,7 +667,7 @@ export default function Home() {
             </h1>
 
             <p className="mt-6 text-lg sm:text-xl text-gray-800 leading-relaxed max-w-2xl">
-              Join the Hifdh Journal Program — a journey of memorisation, discipline,
+              Welcome to the Hifdh Journal — a journey of memorisation, discipline,
               and spiritual growth. Track your daily Sabak, Dhor, Sabak Dhor and weekly goals — all
               in one place.
             </p>
@@ -810,17 +810,16 @@ export default function Home() {
       <section id="about" className="py-20">
         <div className="max-w-5xl mx-auto px-6 sm:px-10">
           <div className="rounded-3xl border border-gray-200 bg-white/60 backdrop-blur p-10 shadow-sm">
-            <p className="uppercase tracking-widest text-sm text-[#9c7c38] mb-3">About the Madrassah</p>
+            <p className="uppercase tracking-widest text-sm text-[#9c7c38] mb-3">About the Hifdh Journal</p>
 
-            <h2 className="text-4xl font-semibold tracking-tight">A Peaceful & Disciplined Environment for Hifdh</h2>
+            <h2 className="text-4xl font-semibold tracking-tight">Clarity, Consistency, and Accountability in Hifdh</h2>
 
             <div className="mt-6 grid md:grid-cols-2 gap-8">
               <p className="text-gray-800 leading-relaxed text-lg">
-                Located in Northcliff, the Al Qadr Hifdh class offers a peaceful and disciplined environment where students build a deep and lasting connection with the Qur’an.
-              </p>
-              <p className="text-gray-800 leading-relaxed text-lg">
-                Through a structured system emphasising focused Sabak, consistent Dhor, and clear weekly targets, students are guided step by step in their memorisation journey — while nurturing discipline, consistency, and good character.
-              </p>
+A structured and organised platform designed to track and manage Hifdh progress with clarity and consistency.
+
+Through focused Sabak tracking, Dhor monitoring, weekly targets, and personalised notes, the system ensures steady memorisation progress while promoting discipline and accountability.              </p>
+             
             </div>
           </div>
         </div>
@@ -834,12 +833,6 @@ export default function Home() {
               <p className="uppercase tracking-widest text-sm text-[#5E4A1D]">Program Highlights</p>
               <h2 className="mt-2 text-4xl font-semibold tracking-tight">Designed for Consistency & Excellence</h2>
             </div>
-            <Link
-              href="/contact"
-              className="inline-flex md:self-end items-center justify-center h-11 px-6 rounded-full bg-black text-white text-sm font-medium hover:bg-gray-900"
-            >
-              Enrol Now
-            </Link>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -895,20 +888,20 @@ export default function Home() {
 
           <div className="grid gap-4">
             <FAQItem
-              question="Who can join the Al Qadr Hifdh Class?"
-              answer="Students of all ages and levels are welcome. Beginners receive step-by-step guidance, while advanced students continue to strengthen memorisation and retention."
+              question="What makes this system more effective than simple tracking?"
+              answer="Unlike basic record-keeping, this system combines progress tracking, structured targets, and performance notes in one place — creating a complete overview that supports both discipline and steady improvement."
             />
             <FAQItem
-              question="What is the class schedule?"
-              answer="Classes run Monday to Friday. Daily sessions focus on new memorisation (Sabak) and revision (Dhor), ensuring a balanced pace that supports long-term retention."
+              question="Does it replace manual record-keeping?"
+              answer="Yes. Instead of using notebooks, everything is organised and securely stored in one structured digital system."
             />
             <FAQItem
-              question="Who teaches the class?"
-              answer="Ml Shaheed Bhabha and Hafidh Muhammed Saleem Pandor, two dedicated and experienced teachers with over 4 years of experience, provide personalised guidance and oversight to every student."
+              question="How does the system support long-term Hifdh goals?"
+              answer="By combining daily tracking, revision monitoring, and structured targets, the system encourages steady progress and long-term memorisation retention."
             />
             <FAQItem
-              question="How do students submit their daily progress?"
-              answer="After signing in, students go to the My Progress page where they enter their Sabak, Sabak Dhor, Dhor, and weekly goal. The system saves it securely and updates the Overview automatically."
+              question="How will this system improve memorisation consistency?"
+              answer="The system creates clear daily and weekly structure through Sabak and Dhor tracking, helping maintain discipline and preventing gaps in revision."
             />
           </div>
         </div>
@@ -965,26 +958,6 @@ export default function Home() {
                   <div className="text-sm text-gray-700">Hifdh Journal</div>
                 </div>
               </div>
-
-              <div className="mt-6 flex flex-wrap gap-3">
-                <a
-                  href="https://wa.me/27606211418"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center h-10 px-4 rounded-full border border-gray-200 bg-white/70 hover:bg-white transition-colors text-sm text-gray-800"
-                >
-                  WhatsApp
-                </a>
-
-                <a
-                  href="https://www.google.com/maps/search/?api=1&query=49+Mountainview+Drive,+Northcliff,+Randburg,+2115"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center h-10 px-4 rounded-full border border-gray-200 bg-white/70 hover:bg-white transition-colors text-sm text-gray-800"
-                >
-                  Location
-                </a>
-              </div>
             </div>
 
             <div className="lg:col-span-7 lg:col-start-6">
@@ -995,16 +968,14 @@ export default function Home() {
                     <a href="/" className="block text-sm text-gray-700 hover:text-black">Home</a>
                     <a href="#about" className="block text-sm text-gray-700 hover:text-black">About</a>
                     <a href="#faq" className="block text-sm text-gray-700 hover:text-black">FAQ</a>
-                    <a href="/contact" className="block text-sm text-gray-700 hover:text-black">Contact</a>
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-sm font-semibold text-gray-900 mb-4">Student Portal</div>
+                  <div className="text-sm font-semibold text-gray-900 mb-4">Portal</div>
                   <div className="space-y-3">
                     <a href="/login" className="block text-sm text-gray-700 hover:text-black">Sign In</a>
                     <a href="/signup" className="block text-sm text-gray-700 hover:text-black">Enrol (Sign Up)</a>
-                    <a href="/my-progress" className="block text-sm text-gray-700 hover:text-black">My Progress</a>
                     <a href="/overview" className="block text-sm text-gray-700 hover:text-black">Overview</a>
                     {user && isAdmin ? (
                       <a href="/admin" className="block text-sm text-gray-700 hover:text-black">
@@ -1052,8 +1023,6 @@ export default function Home() {
           <div className="my-10 h-px bg-gray-200" />
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-600">
-            <p>© {new Date().getFullYear()} Al Qadr Hifdh Class. All rights reserved.</p>
-
             <div className="flex items-center gap-4">
               <a href="#top" className="hover:text-black">Back to top ↑</a>
               <span className="text-gray-300">|</span>
