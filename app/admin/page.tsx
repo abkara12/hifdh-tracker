@@ -250,12 +250,6 @@ export default function AdminPage() {
 
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
-              href="/my-progress"
-              className="inline-flex items-center justify-center h-11 px-6 rounded-full bg-black text-white text-sm font-semibold hover:bg-gray-900"
-            >
-              My Progress
-            </Link>
-            <Link
               href="/"
               className="inline-flex items-center justify-center h-11 px-6 rounded-full border border-gray-200 bg-white/70 hover:bg-white text-sm font-semibold"
             >

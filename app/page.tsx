@@ -411,8 +411,6 @@ export default function Home() {
       { label: "FAQ", href: "#faq" },
       { label: "Sign In", href: "/login" },
       { label: "Enrol (Sign Up)", href: "/signup" },
-      { label: "My Progress", href: "/my-progress" },
-      { label: "Overview", href: "/overview" },
     ],
     []
   );
@@ -477,12 +475,6 @@ export default function Home() {
                 </Link>
               ) : null}
 
-              <Link
-                href="/my-progress"
-                className="inline-flex items-center justify-center h-11 px-5 rounded-full text-sm font-medium text-gray-900 hover:bg-white/60 transition-colors"
-              >
-                My Progress
-              </Link>
               <Link
                 href="/overview"
                 className="inline-flex items-center justify-center h-11 px-5 rounded-full border border-gray-300 bg-white/60 backdrop-blur text-sm font-medium hover:bg-white"
@@ -589,8 +581,6 @@ export default function Home() {
                 <MenuRow href="/" label="Home" sub="Back to the main page" onClick={closeMenu} />
                 <MenuRow href="#about" label="About" sub="About the system" onClick={closeMenu} />
                 <MenuRow href="#faq" label="FAQ" sub="Common questions" onClick={closeMenu} />
-                <MenuRow href="/contact" label="Contact" sub="Ustadh details" onClick={closeMenu} />
-
                 <div className="my-1 h-px bg-gray-200/80" />
 
                 {user ? (
@@ -598,14 +588,6 @@ export default function Home() {
                     {isAdmin ? (
                       <MenuRow href="/admin" label="Admin Dashboard" sub="Manage students" onClick={closeMenu} />
                     ) : null}
-
-                    <MenuRow
-                      href="/my-progress"
-                      label="My Progress"
-                      sub="Add Progress"
-                      onClick={closeMenu}
-                      variant="primary"
-                    />
                     <MenuRow href="/overview" label="Overview" sub="See your history" onClick={closeMenu} />
                   </>
                 ) : (
@@ -668,12 +650,6 @@ export default function Home() {
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               {user ? (
                 <>
-                  <Link
-                    href="/my-progress"
-                    className="inline-flex items-center justify-center h-12 px-8 rounded-full bg-black text-white text-base font-medium hover:bg-gray-900 shadow-sm"
-                  >
-                    Go to My Progress
-                  </Link>
                   <Link
                     href="/overview"
                     className="inline-flex items-center justify-center h-12 px-8 rounded-full border border-gray-300 bg-white/40 backdrop-blur text-base font-medium hover:bg-white/70 transition-colors"
