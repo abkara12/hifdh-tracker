@@ -652,12 +652,6 @@ export default function Home() {
         >
           Admin Dashboard
         </Link>
-        <Link
-          href="/overview"
-          className="inline-flex items-center justify-center h-12 px-8 rounded-full bg-black text-white text-base font-medium hover:bg-gray-900 shadow-sm"
-        >
-          Students Overview
-        </Link>
       </>
     ) : (
       // ✅ Student button
