@@ -53,7 +53,7 @@ export default function SignupPage() {
         { merge: true }
       );
 
-      router.push("/my-progress");
+      router.push("/");
     } catch (error: any) {
       setErr(friendlySignupError(error?.code));
     } finally {
@@ -203,16 +203,6 @@ export default function SignupPage() {
               </div>
             </div>
 
-            <div className="mt-6 rounded-3xl border border-gray-200 bg-white/60 backdrop-blur p-6 shadow-sm">
-              <div className="text-sm font-semibold text-gray-900">Need help enrolling?</div>
-              <p className="mt-1 text-sm text-gray-700">
-                Visit the{" "}
-                <Link className="text-[#9c7c38] font-semibold hover:underline" href="/contact">
-                  Contact
-                </Link>{" "}
-                page for Ustadh details.
-              </p>
-            </div>
           </div>
         </div>
       </div>
