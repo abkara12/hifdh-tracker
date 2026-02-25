@@ -651,10 +651,10 @@ export default function Home() {
               {user ? (
                 <>
                   <Link
-                    href="/overview"
-                    className="inline-flex items-center justify-center h-12 px-8 rounded-full border border-gray-300 bg-white/40 backdrop-blur text-base font-medium hover:bg-white/70 transition-colors"
+                    href="/admin"
+                    className="inline-flex items-center justify-center h-12 px-8 rounded-full bg-black text-white text-base font-medium hover:bg-gray-900 shadow-sm"
                   >
-                    View Overview
+                    Admin Dashboard
                   </Link>
                 </>
               ) : (

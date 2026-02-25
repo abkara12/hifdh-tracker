@@ -48,7 +48,7 @@ export default function LoginPage() {
       if (role === "admin") {
         router.push("/admin");
       } else {
-        router.push("/my-progress");
+        router.push("/");
       }
     } catch (error: any) {
       setErr(friendlyLoginError(error?.code));
