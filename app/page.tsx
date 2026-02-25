@@ -409,7 +409,6 @@ export default function Home() {
       { label: "Home", href: "/" },
       { label: "About", href: "#about" },
       { label: "FAQ", href: "#faq" },
-      { label: "Contact", href: "/contact" },
       { label: "Sign In", href: "/login" },
       { label: "Enrol (Sign Up)", href: "/signup" },
       { label: "My Progress", href: "/my-progress" },
@@ -466,12 +465,6 @@ export default function Home() {
 
         {/* ✅ Desktop actions */}
         <div className="hidden lg:flex items-center gap-3">
-          <Link
-            href="/contact"
-            className="inline-flex items-center justify-center h-11 px-5 rounded-full text-sm font-medium text-gray-900 hover:bg-white/60 transition-colors"
-          >
-            Contact
-          </Link>
 
           {user ? (
             <>
@@ -558,8 +551,8 @@ export default function Home() {
                     <Image src="/logo2.png" alt="Hifdh Journal" width={58} height={58} className="rounded" priority />
                   </div>
                   <div>
-                    <div className="text-sm font-semibold leading-tight">Hifdh Journal</div>
-                    <div className="text-xs text-gray-700">Hifdh Journal • Menu</div>
+                    <div className="text-sm font-semibold leading-tight"> The Hifdh Journal</div>
+                    <div className="text-xs text-gray-700">Menu</div>
                   </div>
                 </div>
 
@@ -594,7 +587,7 @@ export default function Home() {
 
               <div className="mt-6 grid gap-3">
                 <MenuRow href="/" label="Home" sub="Back to the main page" onClick={closeMenu} />
-                <MenuRow href="#about" label="About" sub="About the madrassah" onClick={closeMenu} />
+                <MenuRow href="#about" label="About" sub="About the system" onClick={closeMenu} />
                 <MenuRow href="#faq" label="FAQ" sub="Common questions" onClick={closeMenu} />
                 <MenuRow href="/contact" label="Contact" sub="Ustadh details" onClick={closeMenu} />
 
@@ -657,7 +650,7 @@ export default function Home() {
           <div className="lg:col-span-7">
             <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white/60 backdrop-blur px-4 py-2 text-sm">
               <span className="h-2 w-2 rounded-full bg-[#9c7c38]" />
-              <span className="text-gray-800">Hifdh Journal</span>
+              <span className="text-gray-800">The Hifdh Journal</span>
             </div>
 
             <h1 className="mt-6 text-4xl sm:text-6xl font-bold leading-[1.05] tracking-tight">
@@ -954,8 +947,7 @@ Through focused Sabak tracking, Dhor monitoring, weekly targets, and personalise
             <Image src="/logo2.png" alt="Hifdh Journal" width={58} height={58} className="rounded" priority />
           </div>
                 <div>
-                  <div className="font-semibold text-lg">Hifdh Journal</div>
-                  <div className="text-sm text-gray-700">Hifdh Journal</div>
+                  <div className="font-semibold text-lg">The Hifdh Journal</div>
                 </div>
               </div>
             </div>
