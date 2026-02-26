@@ -840,8 +840,8 @@ Through focused Sabak tracking, Dhor monitoring, weekly targets, and personalise
               }
             />
             <FeatureCard
-              title="Personal Progress System"
-              text="Each student logs in privately and tracks their own Sabak, Dhor, and weekly goal progress."
+              title="Progress System"
+              text="The Ustadh logs in and submits the student's Sabak, Dhor, sabak dhor and weekly goal progress."
               icon={
                 <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none">
                   <path d="M12 12a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" strokeWidth="2" />
