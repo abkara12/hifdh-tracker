@@ -31,9 +31,23 @@ function diffDaysInclusive(startKey: string, endKey: string) {
   const b = parseDateKey(endKey);
   const ms = b.getTime() - a.getTime();
   const days = Math.floor(ms / (1000 * 60 * 60 * 24));
-  return Math.max(0, days) + 1; // inclusive
+  return Math.max(0, days) + 1;
 }
 
+function getDayName(dateKey?: string) {
+  if (!dateKey) return "";
+  const d = parseDateKey(dateKey);
+  return d.toLocaleDateString("en-US", { weekday: "short" });
+}
+
+function getMonthLabel(dateKey?: string) {
+  if (!dateKey) return "";
+  const d = parseDateKey(dateKey);
+  return d.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+}
 type LogRow = {
   id: string;
   dateKey?: string;
@@ -52,7 +66,8 @@ type LogRow = {
   sabakDhorMistakes?: string;
   dhorMistakes?: string;
 
-  // weekly goal meta (admin saves these)
+  notes?: string; // ✅ ADD THIS
+
   weeklyGoalStartDateKey?: string;
   weeklyGoalCompletedDateKey?: string;
   weeklyGoalDurationDays?: number | string;
@@ -170,7 +185,6 @@ export default function OverviewPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-         
           <Link
             href="/"
             className="inline-flex items-center justify-center h-11 px-5 rounded-full border border-gray-300 bg-white/60 backdrop-blur text-sm font-medium hover:bg-white"
@@ -199,7 +213,7 @@ export default function OverviewPage() {
               <p className="uppercase tracking-widest text-xs text-[#9c7c38]">History table</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-tight">Your daily logs</h2>
               <p className="mt-2 text-gray-700">
-                This includes anything you submit AND anything your Ustad logs for you.
+                This includes everything your Ustad logs for you.
               </p>
             </div>
 
@@ -227,6 +241,9 @@ export default function OverviewPage() {
                   <thead>
                     <tr className="text-left text-[11px] uppercase tracking-[0.18em] text-gray-500">
                       <th className="sticky top-0 bg-white/60 backdrop-blur pb-3 pr-4 pl-2 border-b border-gray-200">
+                        Day
+                      </th>
+                      <th className="sticky top-0 bg-white/60 backdrop-blur pb-3 pr-4 pl-2 border-b border-gray-200">
                         Date
                       </th>
 
@@ -236,6 +253,9 @@ export default function OverviewPage() {
                       <th className="sticky top-0 bg-white/60 backdrop-blur pb-3 px-4 border-b border-gray-200 border-l border-gray-100">
                         Read
                       </th>
+                       <th className="sticky top-0 bg-white/60 backdrop-blur pb-3 px-4 border-b border-gray-200 border-l border-gray-100">
+                        Notes
+                      </th>
 
                       <th className="sticky top-0 bg-white/60 backdrop-blur pb-3 px-4 border-b border-gray-200 border-l border-gray-100">
                         Sabak Dhor
@@ -243,12 +263,18 @@ export default function OverviewPage() {
                       <th className="sticky top-0 bg-white/60 backdrop-blur pb-3 px-4 border-b border-gray-200 border-l border-gray-100">
                         Read
                       </th>
+                      <th className="sticky top-0 bg-white/60 backdrop-blur pb-3 px-4 border-b border-gray-200 border-l border-gray-100">
+                        Notes
+                      </th>
 
                       <th className="sticky top-0 bg-white/60 backdrop-blur pb-3 px-4 border-b border-gray-200 border-l border-gray-100">
                         Dhor
                       </th>
                       <th className="sticky top-0 bg-white/60 backdrop-blur pb-3 px-4 border-b border-gray-200 border-l border-gray-100">
                         Read
+                      </th>
+                       <th className="sticky top-0 bg-white/60 backdrop-blur pb-3 px-4 border-b border-gray-200 border-l border-gray-100">
+                        Notes
                       </th>
 
                       <th className="sticky top-0 bg-white/60 backdrop-blur pb-3 px-4 border-b border-gray-200 border-l border-gray-100">
@@ -271,7 +297,12 @@ export default function OverviewPage() {
                   </thead>
 
                   <tbody className="divide-y divide-gray-200">
-                    {rows.map((r) => {
+ {rows.map((r, index) => {
+                    const currentMonth = getMonthLabel(r.dateKey);
+                    const prevMonth =
+                    index > 0 ? getMonthLabel(rows[index - 1].dateKey) : null;
+
+                    const showMonthHeader = index === 0 || currentMonth !== prevMonth;
                       const g = num(r.weeklyGoal);
 
                       const startKey = toText(r.weeklyGoalStartDateKey);
@@ -293,7 +324,22 @@ export default function OverviewPage() {
                       const completed = Boolean(completedKey) || (duration ?? 0) > 0;
 
                       return (
+                        <>
+  {showMonthHeader && (
+    <tr>
+      <td
+        colSpan={16}
+        className="bg-gradient-to-r from-[#9c7c38]/15 to-transparent text-sm font-semibold text-gray-900 py-4 px-4 uppercase tracking-wider"
+      >
+        {currentMonth}
+      </td>
+    </tr>
+  )}
+
                         <tr key={r.id} className="text-sm hover:bg-black/[0.02] transition-colors">
+                        <td className="py-4 pr-4 pl-2 font-medium text-gray-600">
+  {getDayName(r.dateKey)}
+</td>
                           <td className="py-4 pr-4 pl-2 font-medium text-gray-900">
                             {r.dateKey ?? r.id}
                           </td>
@@ -304,6 +350,9 @@ export default function OverviewPage() {
                           <td className="py-4 px-4 text-gray-700 border-l border-gray-100">
                             {toText(r.sabakRead) || "—"}
                           </td>
+                         <td className="py-4 px-4 text-gray-800 border-l border-gray-100">
+  {toText(r.notes) || "—"}
+</td>
 
                           <td className="py-4 px-4 text-gray-800 border-l border-gray-100">
                             {toText(r.sabakDhor) || "—"}
@@ -311,6 +360,9 @@ export default function OverviewPage() {
                           <td className="py-4 px-4 text-gray-700 border-l border-gray-100">
                             {toText(r.sabakDhorRead) || "—"}
                           </td>
+                          <td className="py-4 px-4 text-gray-800 border-l border-gray-100">
+  {toText(r.notes) || "—"}
+</td>
 
                           <td className="py-4 px-4 text-gray-800 border-l border-gray-100">
                             {toText(r.dhor) || "—"}
@@ -318,6 +370,9 @@ export default function OverviewPage() {
                           <td className="py-4 px-4 text-gray-700 border-l border-gray-100">
                             {toText(r.dhorRead) || "—"}
                           </td>
+                          <td className="py-4 px-4 text-gray-800 border-l border-gray-100">
+  {toText(r.notes) || "—"}
+</td>
 
                           <td className="py-4 px-4 text-gray-800 border-l border-gray-100">
                             {toText(r.sabakDhorMistakes) || "—"}
@@ -355,6 +410,7 @@ export default function OverviewPage() {
                             {duration ? `${duration} day(s)` : "—"}
                           </td>
                         </tr>
+                        </>
                       );
                     })}
                   </tbody>
