@@ -83,27 +83,28 @@ function Shell({
 }) {
   return (
     <main className="min-h-screen text-gray-900">
-      <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#efe8da] via-[#f7f4ee] to-white" />
-        <div className="absolute -top-56 left-[-10%] h-[780px] w-[780px] rounded-full bg-[#9c7c38]/25 blur-3xl" />
-        <div className="absolute top-[-20%] right-[-15%] h-[900px] w-[900px] rounded-full bg-black/15 blur-3xl" />
-        <div className="absolute -bottom-72 left-[20%] h-[980px] w-[980px] rounded-full bg-[#9c7c38]/18 blur-3xl" />
-        <div
-          className="absolute inset-0 opacity-[0.14]"
-          style={{
-            backgroundImage:
-              "linear-gradient(45deg, rgba(0,0,0,0.18) 1px, transparent 1px), linear-gradient(-45deg, rgba(0,0,0,0.18) 1px, transparent 1px)",
-            backgroundSize: "72px 72px",
-            backgroundPosition: "0 0, 36px 36px",
-          }}
-        />
-        <div className="absolute inset-0 bg-[radial-gradient(900px_circle_at_50%_12%,transparent_55%,rgba(0,0,0,0.10))]" />
-      </div>
+     <div className="pointer-events-none fixed inset-0 -z-10">
+  {/* Clean luxury base */}
+  <div className="absolute inset-0 bg-[#F8F6F1]" />
+
+  {/* Deep contrast blobs */}
+  <div className="absolute -top-72 -right-40 h-[900px] w-[900px] rounded-full bg-[#1F3F3F]/25 blur-3xl" />
+  <div className="absolute bottom-[-25%] left-[-15%] h-[1000px] w-[1000px] rounded-full bg-[#B8963D]/20 blur-3xl" />
+
+  {/* Subtle radial glow */}
+  <div className="absolute inset-0 bg-[radial-gradient(1000px_circle_at_70%_20%,rgba(184,150,61,0.15),transparent_60%)]" />
+
+  {/* Elegant vignette */}
+  <div className="absolute inset-0 bg-[radial-gradient(900px_circle_at_50%_10%,transparent_50%,rgba(0,0,0,0.08))]" />
+
+  {/* Noise */}
+  <div className="absolute inset-0 opacity-[0.035] mix-blend-multiply bg-[url('/noise.png')]" />
+</div>
 
       <div className="max-w-5xl mx-auto px-5 sm:px-10 py-8 sm:py-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
           <div className="min-w-0">
-            <p className="uppercase tracking-widest text-xs text-[#9c7c38]">
+            <p className="uppercase tracking-widest text-xs text-[#B8963D]">
               Admin → Student
             </p>
             <h1 className="mt-2 text-2xl sm:text-4xl font-semibold tracking-tight break-words">
@@ -127,7 +128,7 @@ function Shell({
 
 function LoadingCard() {
   return (
-    <div className="rounded-3xl border border-gray-200 bg-white/60 backdrop-blur p-6 sm:p-7 shadow-sm">
+    <div className="rounded-3xl border border-gray-300 bg-white/70 backdrop-blur-xl backdrop-blur p-6 sm:p-7 shadow-sm">
       <div className="h-5 w-40 bg-black/10 rounded-full animate-pulse" />
       <div className="mt-3 h-10 w-2/3 bg-black/10 rounded-2xl animate-pulse" />
       <div className="mt-6 grid gap-3">
@@ -157,8 +158,8 @@ export default function AdminStudentPage() {
   const [checking, setChecking] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const [studentEmail, setStudentEmail] = useState("");
-
+const [studentName, setStudentName] = useState("");
+  
   // daily fields
   const [sabak, setSabak] = useState("");
   const [sabakDhor, setSabakDhor] = useState("");
@@ -192,6 +193,23 @@ export default function AdminStudentPage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
+      function resetFields() {
+  setSabak("");
+  setSabakDhor("");
+  setDhor("");
+
+  setSabakReadQuality("");
+  setSabakReadNotes("");
+
+  setSabakDhorReadQuality("");
+  setSabakDhorReadNotes("");
+
+  setDhorReadQuality("");
+  setDhorReadNotes("");
+
+  setSabakDhorMistakes("");
+  setDhorMistakes("");
+}
   const dateKey = useMemo(() => getDateKeySA(), []);
   const currentWeekKey = useMemo(() => isoWeekKeyFromDateKey(dateKey), [dateKey]);
 
@@ -224,70 +242,60 @@ export default function AdminStudentPage() {
     return () => unsub();
   }, []);
 
-  useEffect(() => {
-    async function loadStudent() {
-      const sDoc = await getDoc(doc(db, "users", studentUid));
-      if (sDoc.exists()) {
-        const data = sDoc.data() as any;
+ useEffect(() => {
+  async function loadStudent() {
+    if (!studentUid) return;
 
-        setStudentEmail(toText(data.email));
+    // 🔹 Reset fields BEFORE loading student
+    resetFields();
+    setMarkGoalCompleted(false);
+    setMsg(null);
 
-        setWeeklyGoal(toText(data.weeklyGoal));
-        setWeeklyGoalWeekKey(toText(data.weeklyGoalWeekKey));
-        setWeeklyGoalStartDateKey(toText(data.weeklyGoalStartDateKey));
-        setWeeklyGoalCompletedDateKey(toText(data.weeklyGoalCompletedDateKey));
+    const sDoc = await getDoc(doc(db, "users", studentUid));
+    if (sDoc.exists()) {
+      const data = sDoc.data() as any;
 
-        const dur = data.weeklyGoalDurationDays;
-        setWeeklyGoalDurationDays(typeof dur === "number" ? dur : dur ? Number(dur) : null);
+      const name =
+        typeof data.username === "string"
+          ? data.username
+          : typeof data.email === "string"
+          ? data.email
+          : "Student";
 
-        // seed with snapshot
-        setSabak(toText(data.currentSabak));
-        setSabakDhor(toText(data.currentSabakDhor));
-        setDhor(toText(data.currentDhor));
-        setSabakDhorMistakes(toText(data.currentSabakDhorMistakes));
-        setDhorMistakes(toText(data.currentDhorMistakes));
+      setStudentName(name);
+      setWeeklyGoal(toText(data.weeklyGoal));
+      setWeeklyGoalWeekKey(toText(data.weeklyGoalWeekKey));
+      setWeeklyGoalStartDateKey(toText(data.weeklyGoalStartDateKey));
+      setWeeklyGoalCompletedDateKey(toText(data.weeklyGoalCompletedDateKey));
 
-        // ✅ seed reading snapshot
-        // read from either naming style
-        setSabakReadQuality(pickText(data.currentSabakRead, data.currentSabakReadQuality));
-        setSabakReadNotes(toText(data.currentSabakReadNotes));
+      const dur = data.weeklyGoalDurationDays;
+      setWeeklyGoalDurationDays(typeof dur === "number" ? dur : dur ? Number(dur) : null);
 
-        setSabakDhorReadQuality(
-          pickText(data.currentSabakDhorRead, data.currentSabakDhorReadQuality)
-        );
-        setSabakDhorReadNotes(toText(data.currentSabakDhorReadNotes));
+      // // seed with snapshot
+      // setSabak(toText(data.currentSabak));
+      // setSabakDhor(toText(data.currentSabakDhor));
+      // setDhor(toText(data.currentDhor));
+      // setSabakDhorMistakes(toText(data.currentSabakDhorMistakes));
+      // setDhorMistakes(toText(data.currentDhorMistakes));
 
-        setDhorReadQuality(pickText(data.currentDhorRead, data.currentDhorReadQuality));
-        setDhorReadNotes(toText(data.currentDhorReadNotes));
-      }
+      // ✅ seed reading snapshot
+      // setSabakReadQuality(pickText(data.currentSabakRead, data.currentSabakReadQuality));
+      // setSabakReadNotes(toText(data.currentSabakReadNotes));
 
-      // today's log overrides if exists
-      const todayDoc = await getDoc(doc(db, "users", studentUid, "logs", dateKey));
-      if (todayDoc.exists()) {
-        const d = todayDoc.data() as any;
-        setSabak(toText(d.sabak));
-        setSabakDhor(toText(d.sabakDhor));
-        setDhor(toText(d.dhor));
-        setSabakDhorMistakes(toText(d.sabakDhorMistakes));
-        setDhorMistakes(toText(d.dhorMistakes));
+      // setSabakDhorReadQuality(
+      //   pickText(data.currentSabakDhorRead, data.currentSabakDhorReadQuality)
+      // );
+      // setSabakDhorReadNotes(toText(data.currentSabakDhorReadNotes));
 
-        // ✅ reading fields from today log (read from either naming style)
-        setSabakReadQuality(pickText(d.sabakRead, d.sabakReadQuality));
-        setSabakReadNotes(toText(d.sabakReadNotes));
-
-        setSabakDhorReadQuality(pickText(d.sabakDhorRead, d.sabakDhorReadQuality));
-        setSabakDhorReadNotes(toText(d.sabakDhorReadNotes));
-
-        setDhorReadQuality(pickText(d.dhorRead, d.dhorReadQuality));
-        setDhorReadNotes(toText(d.dhorReadNotes));
-
-        if (!weeklyGoal) setWeeklyGoal(toText(d.weeklyGoal));
-      }
+      // setDhorReadQuality(pickText(data.currentDhorRead, data.currentDhorReadQuality));
+      // setDhorReadNotes(toText(data.currentDhorReadNotes));
     }
+  }
 
-    if (studentUid) loadStudent();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [studentUid, dateKey]);
+  loadStudent();
+}, [studentUid, dateKey]);
+
+  
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -373,25 +381,25 @@ export default function AdminStudentPage() {
           weeklyGoalCompletedDateKey: nextCompletedKey || null,
           weeklyGoalDurationDays: nextDuration ?? null,
 
-          currentSabak: sabak,
-          currentSabakDhor: sabakDhor,
-          currentDhor: dhor,
+          // currentSabak: sabak,
+          // currentSabakDhor: sabakDhor,
+          // currentDhor: dhor,
 
           // ✅ Save snapshot in BOTH naming styles too
-          currentSabakRead: sabakReadQuality,
-          currentSabakDhorRead: sabakDhorReadQuality,
-          currentDhorRead: dhorReadQuality,
+          // currentSabakRead: sabakReadQuality,
+          // currentSabakDhorRead: sabakDhorReadQuality,
+          // currentDhorRead: dhorReadQuality,
 
-          currentSabakReadQuality: sabakReadQuality,
-          currentSabakDhorReadQuality: sabakDhorReadQuality,
-          currentDhorReadQuality: dhorReadQuality,
+          // currentSabakReadQuality: sabakReadQuality,
+          // currentSabakDhorReadQuality: sabakDhorReadQuality,
+          // currentDhorReadQuality: dhorReadQuality,
 
-          currentSabakReadNotes: sabakReadNotes,
-          currentSabakDhorReadNotes: sabakDhorReadNotes,
-          currentDhorReadNotes: dhorReadNotes,
+          // currentSabakReadNotes: sabakReadNotes,
+          // currentSabakDhorReadNotes: sabakDhorReadNotes,
+          // currentDhorReadNotes: dhorReadNotes,
 
-          currentSabakDhorMistakes: sabakDhorMistakes,
-          currentDhorMistakes: dhorMistakes,
+          // currentSabakDhorMistakes: sabakDhorMistakes,
+          // currentDhorMistakes: dhorMistakes,
 
           updatedAt: serverTimestamp(),
           lastUpdatedBy: me?.uid ?? null,
@@ -407,14 +415,19 @@ export default function AdminStudentPage() {
       setWeeklyGoalDurationDays(nextDuration ?? null);
 
       setMsg("Saved ✅");
-      setTimeout(() => setMsg(null), 2500);
+setTimeout(() => setMsg(null), 2500);
+
+resetFields();
+setMarkGoalCompleted(false);
+
+resetFields();
     } catch (err: any) {
       setMsg(err?.message ? `Error: ${err.message}` : "Error saving.");
     } finally {
       setSaving(false);
     }
   }
-
+  
   if (checking) {
     return (
       <Shell title="Loading…" subtitle="Opening student page…">
@@ -426,7 +439,7 @@ export default function AdminStudentPage() {
   if (!me) {
     return (
       <Shell title="Please sign in" subtitle="You must be signed in to log work for a student.">
-        <div className="rounded-3xl border border-gray-200 bg-white/70 backdrop-blur p-6 sm:p-7 shadow-sm">
+        <div className="rounded-3xl border border-gray-300 bg-white/70 backdrop-blur p-6 sm:p-7 shadow-sm">
           <p className="text-gray-700">Go to login, then return to the admin dashboard.</p>
           <div className="mt-5 flex flex-col sm:flex-row gap-3">
             <Link
@@ -437,7 +450,7 @@ export default function AdminStudentPage() {
             </Link>
             <Link
               href="/admin"
-              className="inline-flex items-center justify-center h-11 px-6 rounded-full border border-gray-200 bg-white/70 hover:bg-white text-sm font-semibold"
+              className="inline-flex items-center justify-center h-11 px-6 rounded-full border border-gray-300 bg-white/70 hover:bg-white text-sm font-semibold"
             >
               Back to Admin
             </Link>
@@ -450,7 +463,7 @@ export default function AdminStudentPage() {
   if (!isAdmin) {
     return (
       <Shell title="Access denied" subtitle="This account is not marked as admin.">
-        <div className="rounded-3xl border border-gray-200 bg-white/70 backdrop-blur p-6 sm:p-7 shadow-sm">
+        <div className="rounded-3xl border border-gray-300 bg-white/70 backdrop-blur p-6 sm:p-7 shadow-sm">
           <div className="text-sm text-gray-600">Signed in as</div>
           <div className="mt-1 font-semibold">{me.email}</div>
         </div>
@@ -460,35 +473,35 @@ export default function AdminStudentPage() {
 
   return (
     <Shell
-      title={`Log work for ${studentEmail || "student"}`}
+      title={`Log work for ${studentName || "student"}`}
       subtitle={`Submitting for ${dateKey} • ${currentWeekKey}`}
       rightSlot={
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Link
             href="/admin"
-            className="inline-flex w-full sm:w-auto items-center justify-center h-11 px-5 rounded-full border border-gray-200 bg-white/70 hover:bg-white transition-colors text-sm font-semibold"
+            className="inline-flex w-full sm:w-auto items-center justify-center h-11 px-5 rounded-full border border-gray-300 bg-white/70 hover:bg-white transition-colors text-sm font-semibold"
           >
             Back
           </Link>
           <Link
             href={`/admin/student/${studentUid}/overview`}
-            className="inline-flex w-full sm:w-auto items-center justify-center h-11 px-5 rounded-full bg-black text-white hover:bg-gray-900 transition-colors text-sm font-semibold shadow-sm"
+            className="inline-flex w-full sm:w-auto items-center justify-center h-11 px-5 rounded-full bg-[#111111] text-white hover:bg-[#1c1c1c] shadow-lg shadow-black/10 transition-colors text-sm font-semibold shadow-sm"
           >
             Student Overview
           </Link>
         </div>
       }
     >
-      <div className="rounded-3xl border border-gray-200 bg-white/70 backdrop-blur p-5 sm:p-8 shadow-sm">
+      <div className="rounded-3xl border border-gray-300 bg-white/70 backdrop-blur p-5 sm:p-8 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white/70 px-4 py-2 text-xs font-semibold text-gray-700 w-fit">
-            <span className="h-2 w-2 rounded-full bg-[#9c7c38]" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white/70 px-4 py-2 text-xs font-semibold text-gray-700 w-fit">
+            <span className="h-2 w-2 rounded-full bg-[#B8963D]" />
             Update today’s work
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             {weeklyGoal ? (
-              <span className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white/70 px-3 py-1.5 text-xs font-semibold text-gray-700">
+              <span className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white/70 px-3 py-1.5 text-xs font-semibold text-gray-700">
                 Goal: {weeklyGoalWeekKey || currentWeekKey}
               </span>
             ) : null}
@@ -507,7 +520,7 @@ export default function AdminStudentPage() {
 
         <form onSubmit={handleSave} className="mt-6 grid gap-5">
           {/* Sabak */}
-          <div className="rounded-3xl border border-gray-200 bg-white/60 p-5 sm:p-6">
+          <div className="rounded-3xl border border-gray-300 bg-white/70 backdrop-blur-xl p-5 sm:p-6">
             <div className="text-sm font-semibold text-gray-900">Sabak</div>
             <div className="mt-4 grid gap-4">
               <Field
@@ -535,7 +548,7 @@ export default function AdminStudentPage() {
           </div>
 
           {/* Sabak Dhor */}
-          <div className="rounded-3xl border border-gray-200 bg-white/60 p-5 sm:p-6">
+          <div className="rounded-3xl border border-gray-300 bg-white/70 backdrop-blur-xl p-5 sm:p-6">
             <div className="text-sm font-semibold text-gray-900">Sabak Dhor</div>
             <div className="mt-4 grid gap-4">
               <Field
@@ -570,7 +583,7 @@ export default function AdminStudentPage() {
           </div>
 
           {/* Dhor */}
-          <div className="rounded-3xl border border-gray-200 bg-white/60 p-5 sm:p-6">
+          <div className="rounded-3xl border border-gray-300 bg-white/70 backdrop-blur-xl p-5 sm:p-6">
             <div className="text-sm font-semibold text-gray-900">Dhor</div>
             <div className="mt-4 grid gap-4">
               <Field
@@ -605,7 +618,7 @@ export default function AdminStudentPage() {
           </div>
 
           {/* Weekly goal block */}
-          <div className="rounded-3xl border border-gray-200 bg-white/70 p-5 sm:p-6">
+          <div className="rounded-3xl border border-gray-300 bg-white/70 p-5 sm:p-6">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
               <div>
                 <div className="text-sm font-semibold text-gray-900">Weekly Goal</div>
@@ -632,7 +645,7 @@ export default function AdminStudentPage() {
                   value={weeklyGoal}
                   onChange={(e) => setWeeklyGoal(e.target.value)}
                   disabled={goalLockedThisWeek}
-                  className="h-12 rounded-2xl border border-gray-200 bg-white/80 px-4 outline-none focus:ring-2 focus:ring-[#9c7c38]/30 disabled:opacity-60"
+                  className="h-12 rounded-2xl border border-gray-300 bg-white/80 px-4 outline-none focus:ring-2 focus:ring-[#B8963D]/30 disabled:opacity-60"
                   placeholder="Example: 10 pages"
                 />
               </label>
@@ -646,7 +659,7 @@ export default function AdminStudentPage() {
                 />
               </div>
 
-              <label className="flex items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-white/70 px-4 py-4">
+              <label className="flex items-center justify-between gap-4 rounded-2xl border border-gray-300 bg-white/70 px-4 py-4">
                 <div>
                   <div className="text-sm font-semibold text-gray-900">Weekly Goal Completed</div>
                   <div className="mt-1 text-xs text-gray-600">
@@ -707,7 +720,7 @@ function Field({
       <input
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        className="h-12 rounded-2xl border border-gray-200 bg-white/80 px-4 outline-none focus:ring-2 focus:ring-[#9c7c38]/30"
+        className="h-12 rounded-2xl border border-gray-300 bg-white/80 px-4 outline-none focus:ring-2 focus:ring-[#B8963D]/30"
         placeholder="Type here…"
       />
     </label>
@@ -734,7 +747,7 @@ function SelectField({
       <select
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        className="h-12 rounded-2xl border border-gray-200 bg-white/80 px-4 outline-none focus:ring-2 focus:ring-[#9c7c38]/30"
+        className="h-12 rounded-2xl border border-gray-300 bg-white/80 px-4 outline-none focus:ring-2 focus:ring-[#B8963D]/30"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -748,7 +761,7 @@ function SelectField({
 
 function MiniInfo({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white/70 px-4 py-3">
+    <div className="rounded-2xl border border-gray-300 bg-white/70 px-4 py-3">
       <div className="text-xs text-gray-500">{label}</div>
       <div className="mt-1 text-sm font-semibold text-gray-900 break-words">{value}</div>
     </div>
