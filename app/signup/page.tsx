@@ -159,24 +159,12 @@ export default function SignupPage() {
               )}
 
               <form onSubmit={onSubmit} className="mt-6 grid gap-4">
-              <div>
-              <label className="text-sm font-medium text-gray-800">
-              Student's Name
-              </label>
-              <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              type="text"
-                required
-                  placeholder="e.g. Muhammad Ahmed"
-                className="mt-2 w-full h-12 rounded-2xl border border-gray-300 bg-white/80 px-4 outline-none focus:ring-2 focus:ring-[#B8963D]/40"
-                />
-                </div>
+              
                 <div>
 
                                 <div>
                   <label className="text-sm font-medium text-gray-800">
-                    Parent's Name
+                    Name
                   </label>
                   <input
                     value={parentName}
@@ -190,7 +178,7 @@ export default function SignupPage() {
 
                 <div>
                   <label className="text-sm font-medium text-gray-800">
-                    Parent's Phone Number
+                    Phone Number
                   </label>
                   <input
                     value={parentPhone}
@@ -207,7 +195,7 @@ export default function SignupPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     type="email"
                     required
-                    placeholder="Parent's Email"
+                    placeholder="Email"
                     className="mt-2 w-full h-12 rounded-2xl border border-gray-300 bg-white/80 px-4 outline-none focus:ring-2 focus:ring-[#B8963D]/40"
                   />
                 </div>
